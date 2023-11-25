@@ -1,1 +1,0 @@
-import{_ as e,o as a,c as t,R as o}from"./chunks/framework.ZYDW5TAI.js";const y=JSON.parse('{"title":"Hello","description":"","frontmatter":{},"headers":[],"relativePath":"index.md","filePath":"index.md","lastUpdated":null}'),n={name:"index.md"},i=o("",8),r=[i];function s(l,m,c,d,h,p){return a(),t("div",null,r)}const f=e(n,[["render",s]]);export{y as __pageData,f as default};

@@ -1,0 +1,17 @@
+{
+  "name": "blogdata",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/tianchoy/tianchoy.github.io.git",
+  "author": "乙火 <tianchoy@live.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "vitepress": "^1.0.0-rc.31"
+  },
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "serve": "vitepress serve docs",
+    "deploy": "bash deploy.sh"
+  }
+}

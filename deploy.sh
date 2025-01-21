@@ -26,5 +26,5 @@ cd ../../..
 git init
 git add -A
 git commit -m 'blog update'
-git push -f git@github.com:tianchoy/blogData.git main
+git push -f git@github.com:tianchoy/blogData-main.git main
 git push origin main

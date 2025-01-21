@@ -8,7 +8,7 @@ After finishing a project, I constantly admire it and appreciate my own creation
 
 In a word, I try my best to enjoy my life.
 
-If you are interested, you can contact me through these ways:[Email](mailto:tianchoy@live.com) [知乎](https://www.zhihu.com/people/tianchoy)
+If you are interested, you can contact me through these ways:[Email](mailto:tianchoy@live.com) [知乎](https://www.zhihu.com/people/tianchoy) [饭否](https://fanfou.com/tianchoy)
 
  welcome to communicate with me. 
  

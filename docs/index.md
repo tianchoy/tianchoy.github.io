@@ -2,9 +2,11 @@
 
 ### My name is TianChao
  
-I'm a programmer, and it's not only my job, but also I think it's fun.
+I used to be a front-end developer.
 
-After finishing a project, I constantly admire it and appreciate my own creation.  Besides programming, I like to play snooker and football.  Sometimes, I get together with friends to play guitar and maybe have a few drinks on the weekend.  When I am bored, I like to lie in bed, and either listen to music or read a book.
+Although I am no longer engaged in development work, I still have a strong interest in front-end technology and hope to make it my lifelong hobby.
+
+In life, I like to play snooker and football.  Sometimes, I get together with friends to play guitar and maybe have a few drinks on the weekend.  When I am bored, I like to lie in bed, and either listen to music or read a book.
 
 In a word, I try my best to enjoy my life.
 

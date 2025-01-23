@@ -10,7 +10,7 @@ export default defineConfig({
   },
   lastUpdated: true,
   themeConfig: {
-    lastUpdatedText: "Last updated",
+    //lastUpdatedText: "Last updated",
     nav: [
       { text: "首页", link: "/" },
       { text: "文章", link: "/list/" },

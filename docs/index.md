@@ -2,9 +2,9 @@
 
 ### My name is TianChao
  
-I am a front-end developer.
+I'm a front-end developer.
 
-Although I am no longer engaged in development work, I still have a strong interest in front-end technology and hope to make it my lifelong hobby.
+I think writing code is a very happy thing. I usually use Vue, React and Flutter. Although I will encounter many problems, I have always been confident in solving them.
 
 In life, I like to play snooker and football.  Sometimes, I get together with friends to play guitar and maybe have a few drinks on the weekend.  When I am bored, I like to lie in bed, and either listen to music or read a book.
 

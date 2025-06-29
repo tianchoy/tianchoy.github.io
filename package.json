@@ -17,6 +17,9 @@
   "dependencies": {
     "@shikijs/langs": "^3.7.0",
     "@types/node": "^22.10.7",
-    "shiki": "^3.7.0"
+    "@vueuse/core": "^13.4.0",
+    "gray-matter": "^4.0.3",
+    "shiki": "^3.7.0",
+    "vue": "^3.5.17"
   }
 }

@@ -1,0 +1,14 @@
+import{_ as s,c as n,o as e,ag as p}from"./chunks/framework.BJQRJOxx.js";const m=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"list/dart/鸿蒙开发app资源库.md","filePath":"list/dart/鸿蒙开发app资源库.md","lastUpdated":1754181018000}'),l={name:"list/dart/鸿蒙开发app资源库.md"};function r(o,a,t,i,c,d){return e(),n("div",null,a[0]||(a[0]=[p(`<h3 id="鸿蒙图标库" tabindex="-1">鸿蒙图标库 <a class="header-anchor" href="#鸿蒙图标库" aria-label="Permalink to &quot;鸿蒙图标库&quot;">​</a></h3><p><a href="https://ohpm.openharmony.cn/#/cn/home" target="_blank" rel="noreferrer">鸿蒙第三方插件库</a></p><p><a href="https://developer.huawei.com/consumer/cn/design/harmonyos-symbol/" target="_blank" rel="noreferrer">鸿蒙图标库</a></p><h4 id="内置图标使用示例" tabindex="-1">内置图标使用示例 <a class="header-anchor" href="#内置图标使用示例" aria-label="Permalink to &quot;内置图标使用示例&quot;">​</a></h4><div class="language- vp-adaptive-theme line-numbers-mode"><button title="Copy Code" class="copy"></button><span class="lang"></span><pre class="shiki shiki-themes github-light github-dark vp-code" tabindex="0"><code><span class="line"><span>// SymbolGlyph组件示例 </span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>SymbolGlyph($r(&#39;sys.symbol.ohos_folder_badge_plus&#39;))</span></span>
+<span class="line"><span>  .fontSize(96)</span></span>
+<span class="line"><span>  .fontColor(Color.Black)</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>// SymbolSpan嵌入文本示例</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>Text() {</span></span>
+<span class="line"><span>  Span(&#39;通知 &#39;)</span></span>
+<span class="line"><span>  SymbolSpan($r(&#39;sys.symbol.bell_fill&#39;))</span></span>
+<span class="line"><span>}</span></span>
+<span class="line"><span></span></span>
+<span class="line"><span>示例中，ohos_folder_badge_plus和bell_fill均为示例，具体图标在鸿蒙图标库中找到</span></span></code></pre><div class="line-numbers-wrapper" aria-hidden="true"><span class="line-number">1</span><br><span class="line-number">2</span><br><span class="line-number">3</span><br><span class="line-number">4</span><br><span class="line-number">5</span><br><span class="line-number">6</span><br><span class="line-number">7</span><br><span class="line-number">8</span><br><span class="line-number">9</span><br><span class="line-number">10</span><br><span class="line-number">11</span><br><span class="line-number">12</span><br><span class="line-number">13</span><br><span class="line-number">14</span><br></div></div><h4 id="传值方式" tabindex="-1">传值方式 <a class="header-anchor" href="#传值方式" aria-label="Permalink to &quot;传值方式&quot;">​</a></h4><p>在<code>@ComponentV2</code>中传值方式与<code>@Component</code> 不同</p><p><code>@ComponentV2</code>子组件中需用<code>@Param </code>当作修饰器，如果使用<code>@State</code>或者<code>@Prop </code>编辑器会报错</p>`,8)]))}const h=s(l,[["render",r]]);export{m as __pageData,h as default};

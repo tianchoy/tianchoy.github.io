@@ -1,20 +1,20 @@
-# Hello
+## Hi, there! 
 
-### My name is TianChao
- 
-I'm a front-end developer.
+### I'm TianChao — Web front-end dev & fun-haver!  
 
-I think writing code is a very happy thing. I usually use Vue, React and Flutter. Although I will encounter many problems, I have always been confident in solving them.
+I **LOVE** writing code — it’s like solving puzzles while building cool stuff! 🛠️  
+My usual playgrounds are **Vue**, **React**, and **Flutter**. Sure, bugs pop up now and then 🐞, but hey — who doesn’t enjoy a good challenge? I’m always up for it!  
 
-In life, I like to play snooker and football.  Sometimes, I get together with friends to play guitar and maybe have a few drinks on the weekend.  When I am bored, I like to lie in bed, and either listen to music or read a book.
+When I’m not typing away at the keyboard, you’ll probably find me:  
+🎱 Playing snooker with focus mode ON  
+⚽ Kicking a ball around like I’m in the Premier League  
+🎸 Jamming with friends on weekends — guitars, good vibes, maybe a drink or two 🍻  
+🛏️ Or just… lying in bed, diving into a book 📖 or zoning out to some chill tunes 🎧  
 
-In a word, I try my best to enjoy my life.
+Oh! And I’m kinda into documenting life’s little moments ✨ — because every day has something cool worth remembering.  
+I share snippets of my life here and also over at [饭否](https://fanfou.com/tianchoy) — come say hi if you feel like it! Let’s chat, connect, and maybe create something fun together 😄
 
-If you are interested, you can contact me through these ways:[Email](mailto:tianchoy@live.com)  [饭否](https://fanfou.com/tianchoy)
-
- welcome to communicate with me. 
- 
- Thank You!
+Thanks for stopping by! ♥️
 
 
 <style>

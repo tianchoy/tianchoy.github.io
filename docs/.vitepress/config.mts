@@ -31,7 +31,7 @@ export default defineConfig({
   vite: {
     define: {
       __ARTICLE_LIST__: JSON.stringify(
-        generateArticleList(['list/diary','list/react','list/dart', 'list/Vue3', 'list/python',  'list/单片机'])
+        generateArticleList(['list/react','list/dart', 'list/Vue3', 'list/python',  'list/单片机'])
       ),
     },
   },

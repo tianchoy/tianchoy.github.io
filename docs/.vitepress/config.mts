@@ -25,7 +25,7 @@ export default defineConfig({
     },
     footer: {
       message: "",
-      copyright: "©2025 All Rights Reserved. TianChao",
+      copyright: "©2026 All Rights Reserved. TianChao",
     },
   },
   vite: {

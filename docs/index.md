@@ -12,7 +12,7 @@ When I’m not typing away at the keyboard, you’ll probably find me:
 🛏️ Or just… lying in bed, diving into a book 📖 or zoning out to some chill tunes 🎧  
 
 Oh! And I’m kinda into documenting life’s little moments ✨ — because every day has something cool worth remembering.  
-I share snippets of my life here and also over at [饭否](https://fanfou.com/tianchoy) [不老歌](http://bulaoge.net/?tianchao) — come say hi if you feel like it! Let’s chat, connect, and maybe create something fun together 😄
+I share snippets of my life here and also over at [饭否](https://fanfou.com/tianchoy) [博客](https://tianchao.bearblog.dev/) — come say hi if you feel like it! Let’s chat, connect, and maybe create something fun together 😄
 
 Thanks for stopping by! ♥️
 

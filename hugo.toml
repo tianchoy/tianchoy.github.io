@@ -1,33 +1,23 @@
-baseURL = "https://tianchao.github.io/"
+baseURL = "https://tianchoy.github.io/"
+title = "特严赤傲"
+theme = "hugo-coder"
 locale = "zh-CN"
 defaultContentLanguage = "zh-cn"
-title = "特严赤傲"
-theme = "anatole"
-enableGitInfo = true
-hasCJKLanguage = true
-summaryLength = 20
 enableEmoji = true
 enableRobotsTXT = true
+hasCJKLanguage = true
+summaryLength = 20
+enableGitInfo = true
 
-[params]
-  title = "特严赤傲"
-  author = "乙火"
-  description = "小田的github博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等等的记录。"
-  profilePicture = "images/profile.svg"
-  favicon = "favicons/"
-  mainSections = ["post"]
-  singleDateFormat = "2006-01-02"
-  indexDateFormat = "2006-01-02"
-  listDateFormat = "2006-01-02"
-  disableTitleCapitalization = true
-  reversepagetitle = true
-  copyright = "©2026 All Rights Reserved. TianChao"
-  [[params.socialIcons]]
-    icon = "fa-brands fa-github"
-    title = "GitHub"
-    url = "https://github.com/tianchoy"
+[pagination]
+  pagerSize = 10
 
 [markup]
+  [markup.highlight]
+    noClasses = false
+    lineNos = true
+    guessSyntax = true
+    style = "github"
   [markup.goldmark.renderer]
     unsafe = true
   [markup.goldmark.extensions]
@@ -36,10 +26,35 @@ enableRobotsTXT = true
       [markup.goldmark.extensions.passthrough.delimiters]
         block = [["\\[", "\\]"], ["$$", "$$"]]
         inline = [["\\(", "\\)"]]
-  [markup.highlight]
-    lineNos = true
-    guessSyntax = true
-    style = "github"
+
+[params]
+  author = "特严赤傲"
+  info = ["乙火", "学习积累 · 问题笔记 · 代码分享 · 生活随笔"]
+  description = "小田的github博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等等的记录。"
+  keywords = "博客,前端,Vue,React,Flutter,生活随笔"
+  avatarURL = "images/profile.svg"
+  dateFormat = "2006-01-02"
+  since = 2022
+  colorScheme = "auto"
+  hideColorSchemeToggle = false
+  maxSeeAlsoItems = 5
+  faviconSVG = "images/favicon.svg"
+  favicon_32 = "images/favicon.svg"
+  favicon_16 = "images/favicon.svg"
+  touchicon = "images/favicon.svg"
+  mask_icon = "images/favicon.svg"
+
+[[params.social]]
+  name = "GitHub"
+  icon = "fa-brands fa-github fa-2x"
+  weight = 1
+  url = "https://github.com/tianchoy"
+
+[[params.social]]
+  name = "饭否"
+  svg = "fanfou.svg"
+  weight = 2
+  url = "https://fanfou.com/tianchoy"
 
 [taxonomies]
   category = "categories"
@@ -49,21 +64,13 @@ enableRobotsTXT = true
 [menu]
   [[menu.main]]
     name = "首页"
-    identifier = "home"
-    weight = 100
+    weight = 1
     url = "/"
   [[menu.main]]
     name = "文章"
-    identifier = "posts"
-    weight = 200
-    url = "/post/"
+    weight = 2
+    url = "/posts/"
   [[menu.main]]
     name = "分类"
-    identifier = "categories"
-    weight = 300
+    weight = 3
     url = "/categories/"
-  [[menu.main]]
-    name = "Github"
-    identifier = "github"
-    weight = 400
-    url = "https://github.com/tianchoy"

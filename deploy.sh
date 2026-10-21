@@ -4,7 +4,7 @@
 set -e
 
 # 使用 Hugo 构建静态站点（输出到 public/）
-hugo --gc --minify
+hugo --gc --minify --cleanDestinationDir
 
 # 进入待发布的目录
 cd public

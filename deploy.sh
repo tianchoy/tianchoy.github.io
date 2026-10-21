@@ -22,6 +22,6 @@ git push -f git@github.com:tianchoy/tianchoy.github.io.git main
 cd ..
 
 git add -A
-git commit -m 'blog update'
-git push -f git@github.com:tianchao/blogData-main.git main
+git diff --cached --quiet || git commit -m 'blog update'
+git push -f git@github.com:tianchoy/blogData-main.git main
 git push origin main

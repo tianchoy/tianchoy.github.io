@@ -29,7 +29,7 @@ enableGitInfo = true
 
 [params]
   author = "特严赤傲"
-  info = ["乙火", "学习积累 · 问题笔记 · 代码分享 · 生活随笔"]
+  info = ["乙火", "代码 · 生活 · 随笔"]
   description = "小田的github博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等等的记录。"
   keywords = "博客,前端,Vue,React,Flutter,生活随笔"
   avatarURL = "images/profile.svg"
@@ -74,3 +74,7 @@ enableGitInfo = true
     name = "分类"
     weight = 3
     url = "/categories/"
+  [[menu.main]]
+    name = "关于"
+    weight = 4
+    url = "/about/"

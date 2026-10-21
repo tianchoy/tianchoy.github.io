@@ -17,7 +17,9 @@ git add -A
 git commit -m 'deploy'
 
 # 部署到 https://<USERNAME>.github.io
+# 注意：GitHub Pages 可能从 master 构建，main 与 master 都推送，确保生效
 git push -f git@github.com:tianchoy/tianchoy.github.io.git main
+git push -f git@github.com:tianchoy/tianchoy.github.io.git main:master
 
 cd ..
 

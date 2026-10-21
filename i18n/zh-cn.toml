@@ -1,0 +1,61 @@
+[category]
+other = "分类"
+
+[tag]
+other = "标签"
+
+[reading_time]
+one = "1 分钟阅读"
+other = "{{ .Count }} 分钟阅读"
+
+[old_content_warning]
+one = "注意：本文已超过 {{ .Count }} 天，内容可能已过时。"
+other = "注意：本文已超过 {{ .Count }} 天，内容可能已过时。"
+
+[page_not_found]
+other = "页面未找到"
+
+[page_does_not_exist]
+other = "抱歉，该页面不存在。"
+
+[head_back]
+other = "你可以返回 <a href=\"{{ . }}\">首页</a>。"
+
+[comments]
+other = "评论"
+
+[send]
+other = "发送"
+
+[read_more]
+other = "阅读更多"
+
+[name]
+other = "姓名"
+
+[email]
+other = "邮箱"
+
+[message]
+other = "留言"
+
+[warning]
+other = "警告"
+
+[info]
+other = "提示"
+
+[update]
+other = "更新"
+
+[series_posts]
+other = "本系列文章"
+
+[related_posts]
+other = "相关文章"
+
+[toc]
+other = "目录"
+
+[ariaLanguage]
+other = "语言："

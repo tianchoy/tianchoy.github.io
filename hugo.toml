@@ -1,0 +1,69 @@
+baseURL = "https://tianchao.github.io/"
+locale = "zh-CN"
+defaultContentLanguage = "zh-cn"
+title = "特严赤傲"
+theme = "anatole"
+enableGitInfo = true
+hasCJKLanguage = true
+summaryLength = 20
+enableEmoji = true
+enableRobotsTXT = true
+
+[params]
+  title = "特严赤傲"
+  author = "乙火"
+  description = "小田的github博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等等的记录。"
+  profilePicture = "images/profile.svg"
+  favicon = "favicons/"
+  mainSections = ["post"]
+  singleDateFormat = "2006-01-02"
+  indexDateFormat = "2006-01-02"
+  listDateFormat = "2006-01-02"
+  disableTitleCapitalization = true
+  reversepagetitle = true
+  copyright = "©2026 All Rights Reserved. TianChao"
+  [[params.socialIcons]]
+    icon = "fa-brands fa-github"
+    title = "GitHub"
+    url = "https://github.com/tianchoy"
+
+[markup]
+  [markup.goldmark.renderer]
+    unsafe = true
+  [markup.goldmark.extensions]
+    [markup.goldmark.extensions.passthrough]
+      enable = true
+      [markup.goldmark.extensions.passthrough.delimiters]
+        block = [["\\[", "\\]"], ["$$", "$$"]]
+        inline = [["\\(", "\\)"]]
+  [markup.highlight]
+    lineNos = true
+    guessSyntax = true
+    style = "github"
+
+[taxonomies]
+  category = "categories"
+  tag = "tags"
+  series = "series"
+
+[menu]
+  [[menu.main]]
+    name = "首页"
+    identifier = "home"
+    weight = 100
+    url = "/"
+  [[menu.main]]
+    name = "文章"
+    identifier = "posts"
+    weight = 200
+    url = "/post/"
+  [[menu.main]]
+    name = "分类"
+    identifier = "categories"
+    weight = 300
+    url = "/categories/"
+  [[menu.main]]
+    name = "Github"
+    identifier = "github"
+    weight = 400
+    url = "https://github.com/tianchoy"

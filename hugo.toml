@@ -59,7 +59,7 @@ summaryLength = 30
     [params.home.profile]
       enable = true
       gravatarEmail = ""
-      avatarURL = "images/profile.jpg"
+      avatarURL = "/images/profile.jpg"
       title = "特严赤傲"
       subtitle = "乙火"
       typeit = false

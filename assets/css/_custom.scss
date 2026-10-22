@@ -100,17 +100,33 @@
 
 // 关于页面：以个人资料卡为头图，正文精致排版
 .about-page {
-  // 去掉头图中多余的大号名称（首页已展示），仅保留头像 + 简介 + 社交链接
-  .home-title {
-    display: none;
-  }
-
+  // 头图：顶部留白
   .home-profile {
+    margin-top: 2rem;
     margin-bottom: 1.5rem;
+    text-align: left;
   }
 
+  // 圆形头像（主题的 home-avatar 样式只在 .home 下生效，这里需单独指定）
+  .home-avatar {
+    padding: 0;
+    margin-bottom: .6rem;
+
+    img {
+      width: 7rem;
+      height: 7rem;
+      border-radius: 50%;
+      object-fit: cover;
+      display: inline-block;
+      margin: 0;
+      box-shadow: 0 0 0 .3618em rgba(0, 0, 0, .05);
+    }
+  }
+
+  // 去掉头图中的大号名称与「乙火」简介，仅保留头像 + 社交链接
+  .home-title,
   .home-subtitle {
-    margin: .4rem 0 .8rem;
+    display: none;
   }
 
   .about-content {
@@ -130,5 +146,27 @@
         margin: .5rem 0;
       }
     }
+  }
+}
+
+// 文章底部：更新时间与分享图标位于同一行，分列左右两端
+.post-footer .post-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem 1rem;
+
+  .post-info-line {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: .75rem;
+    width: auto;
+  }
+
+  // 未启用 markdown 链接时该容器为空，隐藏以免占据 8rem 宽度
+  .post-info-md:empty {
+    display: none;
   }
 }

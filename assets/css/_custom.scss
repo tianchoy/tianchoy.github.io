@@ -3,12 +3,107 @@
 // 自定义样式
 // ==============================
 
-// 文章列表项加大上下间距，缓解拥挤感
+// 文章列表项：加大上下间距 + 标题字号略小，缓解拥挤
 .archive-item {
   margin: 1rem 0 1rem 1.5rem;
   padding: .35rem 0;
 }
 
 .archive-item-link {
-  font-size: 1.05rem;
+  font-size: .95rem;
+}
+
+// 文章详情页：更宽松、精致的排版
+.single {
+  // 限制阅读宽度并居中，避免长行拥挤
+  max-width: 46rem;
+  margin-left: auto;
+  margin-right: auto;
+
+  .single-title {
+    margin: 2.5rem 0 .75rem;
+    font-size: 1.75rem;
+    line-height: 1.4;
+  }
+
+  .single-subtitle {
+    margin: .5rem 0 1rem;
+  }
+
+  // 元信息两行之间，以及与正文拉开距离
+  .post-meta {
+    font-size: .9rem;
+    line-height: 1.9;
+    margin: 0 0 1.75rem;
+
+    .post-meta-line {
+      margin: .3rem 0;
+    }
+  }
+
+  .content {
+    font-size: 1.05rem;
+    line-height: 1.9;
+
+    p {
+      margin: 1.1rem 0;
+      line-height: 1.9;
+    }
+
+    h2, h3, h4, h5, h6 {
+      margin: 2.2rem 0 1rem;
+      line-height: 1.5;
+    }
+
+    ul, ol {
+      margin: 1.1rem 0;
+
+      li {
+        margin: .45rem 0;
+      }
+    }
+
+    blockquote {
+      margin: 1.6rem 0;
+      padding: .7rem 1.1rem;
+      border-left-width: .35rem;
+    }
+
+    img {
+      border-radius: 8px;
+      margin: 1.6rem auto;
+    }
+
+    // 代码块：更通透的行距与块间距
+    .highlight {
+      margin: 1.2rem 0;
+      line-height: 1.7em;
+
+      pre {
+        padding: .5rem 0 .5rem .75rem;
+      }
+    }
+  }
+}
+
+// 关于页面：以个人资料卡为头图，正文精致排版
+.about-page {
+  .about-content {
+    text-align: left;
+    margin-top: 2.5rem;
+    font-size: 1.05rem;
+    line-height: 1.9;
+
+    p {
+      margin: 1.1rem 0;
+    }
+
+    ul, ol {
+      margin: 1.1rem 0;
+
+      li {
+        margin: .5rem 0;
+      }
+    }
+  }
 }

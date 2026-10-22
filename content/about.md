@@ -2,6 +2,7 @@
 title: "关于"
 description: "关于特严赤傲（乙火）——写代码、记录生活的人。"
 date: 2022-01-01
+layout: "about"
 ---
 
 I **LOVE** writing code — it's like solving puzzles while building cool stuff! 🛠️

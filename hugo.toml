@@ -22,7 +22,6 @@ summaryLength = 30
 
 [taxonomies]
   category = "categories"
-  tag = "tags"
 
 [params]
   defaultTheme = "auto"
@@ -157,16 +156,11 @@ summaryLength = 30
     url = "/posts/"
   [[menu.main]]
     weight = 3
-    identifier = "tags"
-    name = "标签"
-    url = "/tags/"
-  [[menu.main]]
-    weight = 4
     identifier = "categories"
     name = "分类"
     url = "/categories/"
   [[menu.main]]
-    weight = 5
+    weight = 4
     identifier = "about"
     name = "关于"
     url = "/about/"

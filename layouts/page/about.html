@@ -1,0 +1,14 @@
+{{- define "title" }}{{ .Title }} - {{ .Site.Title }}{{ end -}}
+
+{{- define "content" -}}
+    {{- $params := .Scratch.Get "params" -}}
+    <div class="page single special about-page">
+        {{- /* 个人资料卡作为头图：头像 + 名称 + 简介 + 社交链接 */ -}}
+        {{- partial "home/profile.html" . -}}
+
+        {{- /* 正文 */ -}}
+        <div class="about-content">
+            {{- dict "Content" .Content "Ruby" $params.ruby "Fraction" $params.fraction "Fontawesome" $params.fontawesome | partial "function/content.html" | safeHTML -}}
+        </div>
+    </div>
+{{- end -}}

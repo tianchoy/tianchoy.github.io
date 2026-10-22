@@ -2,6 +2,7 @@
 title: "微信小程序云开发获取openid"
 date: 2025-03-04T21:57:45+08:00
 categories: ["单片机"]
+tags: ["单片机"]
 draft: false
 ---
 

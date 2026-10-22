@@ -2,6 +2,7 @@
 title: "vue3自定义tab组件切换简易效果"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
+tags: ["Vue3"]
 draft: false
 ---
 

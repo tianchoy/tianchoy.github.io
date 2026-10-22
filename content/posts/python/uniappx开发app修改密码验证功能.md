@@ -2,6 +2,7 @@
 title: "uniappx开发app修改密码验证功能"
 date: 2025-07-08T22:07:07+08:00
 categories: ["python"]
+tags: ["python"]
 draft: false
 ---
 

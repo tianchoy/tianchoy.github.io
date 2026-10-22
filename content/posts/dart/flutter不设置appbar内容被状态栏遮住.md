@@ -2,6 +2,7 @@
 title: "flutter不设置appbar内容被状态栏遮住"
 date: 2024-10-20T11:42:58+08:00
 categories: ["dart"]
+tags: ["dart"]
 draft: false
 ---
 

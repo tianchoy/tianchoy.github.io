@@ -2,6 +2,7 @@
 title: "miot-plugin-sdk 使用echart图表插件"
 date: 2024-10-20T11:42:58+08:00
 categories: ["单片机"]
+tags: ["单片机"]
 draft: false
 ---
 

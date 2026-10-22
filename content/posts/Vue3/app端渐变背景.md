@@ -2,6 +2,7 @@
 title: "app端渐变背景"
 date: 2026-09-03T21:48:35+08:00
 categories: ["Vue3"]
+tags: ["Vue3"]
 draft: false
 ---
 

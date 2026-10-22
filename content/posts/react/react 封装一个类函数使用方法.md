@@ -2,6 +2,7 @@
 title: "react 封装一个类函数使用方法"
 date: 2025-01-21T14:25:11+08:00
 categories: ["react"]
+tags: ["react"]
 draft: false
 ---
 

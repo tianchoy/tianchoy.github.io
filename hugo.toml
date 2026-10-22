@@ -60,13 +60,13 @@ summaryLength = 30
     [params.home.profile]
       enable = true
       gravatarEmail = ""
-      avatarURL = "images/profile.svg"
+      avatarURL = "images/profile.jpg"
       title = "特严赤傲"
       subtitle = "乙火"
       typeit = false
       social = true
     [params.home.posts]
-      enable = true
+      enable = false
       paginate = 6
 
   [params.social]
@@ -133,7 +133,7 @@ summaryLength = 30
     XMPP = ""
     Matrix = ""
     Bilibili = ""
-    Email = ""
+    Email = "tianchoy@live.com"
     RSS = ""
 
   [params.page]

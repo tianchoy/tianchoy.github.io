@@ -2,6 +2,7 @@
 title: "MacBook 终端命令大全"
 date: 2025-08-17T09:08:29+08:00
 categories: ["单片机"]
+tags: ["单片机"]
 draft: false
 ---
 

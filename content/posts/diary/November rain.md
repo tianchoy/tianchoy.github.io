@@ -2,6 +2,7 @@
 title: "November rain"
 date: 2024-10-20T11:42:58+08:00
 categories: ["diary"]
+tags: ["diary"]
 draft: false
 ---
 

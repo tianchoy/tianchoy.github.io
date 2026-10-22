@@ -2,6 +2,7 @@
 title: "React 父子组件传值"
 date: 2025-04-15T16:41:16+08:00
 categories: ["react"]
+tags: ["react"]
 draft: false
 ---
 

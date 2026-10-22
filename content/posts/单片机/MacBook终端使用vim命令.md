@@ -2,6 +2,7 @@
 title: "MacBook终端使用vim命令"
 date: 2025-02-28T23:31:36+08:00
 categories: ["单片机"]
+tags: ["单片机"]
 draft: false
 ---
 

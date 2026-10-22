@@ -2,6 +2,7 @@
 title: "GitHub 操作命令完整指南"
 date: 2025-08-17T09:08:29+08:00
 categories: ["单片机"]
+tags: ["单片机"]
 draft: false
 ---
 

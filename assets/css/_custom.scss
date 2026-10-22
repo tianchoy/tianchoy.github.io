@@ -1,0 +1,14 @@
+// ==============================
+// Custom style overrides
+// 自定义样式
+// ==============================
+
+// 文章列表项加大上下间距，缓解拥挤感
+.archive-item {
+  margin: 1rem 0 1rem 1.5rem;
+  padding: .35rem 0;
+}
+
+.archive-item-link {
+  font-size: 1.05rem;
+}

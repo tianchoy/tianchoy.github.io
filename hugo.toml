@@ -1,80 +1,172 @@
 baseURL = "https://tianchoy.github.io/"
 title = "特严赤傲"
-theme = "hugo-coder"
+theme = "keepit"
 locale = "zh-CN"
 defaultContentLanguage = "zh-cn"
 enableEmoji = true
 enableRobotsTXT = true
 hasCJKLanguage = true
-summaryLength = 20
-enableGitInfo = true
-
-[pagination]
-  pagerSize = 10
+summaryLength = 30
 
 [markup]
+  [markup.goldmark.renderer]
+    unsafe = true
   [markup.highlight]
     noClasses = false
     lineNos = true
     guessSyntax = true
     style = "github"
-  [markup.goldmark.renderer]
-    unsafe = true
-  [markup.goldmark.extensions]
-    [markup.goldmark.extensions.passthrough]
-      enable = true
-      [markup.goldmark.extensions.passthrough.delimiters]
-        block = [["\\[", "\\]"], ["$$", "$$"]]
-        inline = [["\\(", "\\)"]]
 
-[params]
-  author = "特严赤傲"
-  info = ["乙火", "代码 · 生活 · 随笔"]
-  description = "小田的github博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等等的记录。"
-  keywords = "博客,前端,Vue,React,Flutter,生活随笔"
-  avatarURL = "images/profile.svg"
-  dateFormat = "2006-01-02"
-  since = 2022
-  colorScheme = "auto"
-  hideColorSchemeToggle = false
-  maxSeeAlsoItems = 5
-  faviconSVG = "images/favicon.svg"
-  favicon_32 = "images/favicon.svg"
-  favicon_16 = "images/favicon.svg"
-  touchicon = "images/favicon.svg"
-  mask_icon = "images/favicon.svg"
-
-[[params.social]]
-  name = "GitHub"
-  icon = "fa-brands fa-github fa-2x"
-  weight = 1
-  url = "https://github.com/tianchoy"
-
-[[params.social]]
-  name = "饭否"
-  svg = "fanfou.svg"
-  weight = 2
-  url = "https://fanfou.com/tianchoy"
+[pagination]
+  pagerSize = 10
 
 [taxonomies]
   category = "categories"
   tag = "tags"
-  series = "series"
+
+[params]
+  defaultTheme = "auto"
+  dateFormat = "2006-01-02"
+  title = "特严赤傲"
+  description = "小田的github博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等等的记录。"
+  keywords = "博客,前端,Vue,React,Flutter,生活随笔"
+
+  [params.header]
+    [params.header.title]
+      name = "特严赤傲"
+
+  [params.footer]
+    enable = true
+    hugo = true
+    copyright = true
+    author = true
+    since = 2022
+
+  [params.section]
+    paginate = 20
+    dateFormat = "01-02"
+    rss = 10
+
+  [params.list]
+    paginate = 20
+    dateFormat = "01-02"
+    rss = 10
+
+  [params.app]
+    svgFavicon = "images/favicon.svg"
+
+  [params.home]
+    rss = 10
+    [params.home.profile]
+      enable = true
+      gravatarEmail = ""
+      avatarURL = "images/profile.svg"
+      title = "特严赤傲"
+      subtitle = "乙火"
+      typeit = false
+      social = true
+    [params.home.posts]
+      enable = true
+      paginate = 6
+
+  [params.social]
+    GitHub = "tianchoy"
+    Fanfou = "tianchoy"
+    Linkedin = ""
+    Twitter = ""
+    Instagram = ""
+    Facebook = ""
+    Telegram = ""
+    Medium = ""
+    Gitlab = ""
+    Youtubelegacy = ""
+    Youtubecustom = ""
+    Youtubechannel = ""
+    Tumblr = ""
+    Quora = ""
+    Keybase = ""
+    Pinterest = ""
+    Reddit = ""
+    Codepen = ""
+    FreeCodeCamp = ""
+    Bitbucket = ""
+    Stackoverflow = ""
+    Weibo = ""
+    Odnoklassniki = ""
+    VK = ""
+    Flickr = ""
+    Xing = ""
+    Snapchat = ""
+    Soundcloud = ""
+    Spotify = ""
+    Bandcamp = ""
+    Paypal = ""
+    Fivehundredpx = ""
+    Mix = ""
+    Goodreads = ""
+    Lastfm = ""
+    Foursquare = ""
+    Hackernews = ""
+    Kickstarter = ""
+    Patreon = ""
+    Steam = ""
+    Twitch = ""
+    Strava = ""
+    Skype = ""
+    Whatsapp = ""
+    Zhihu = ""
+    Douban = ""
+    Angellist = ""
+    Slidershare = ""
+    Jsfiddle = ""
+    Deviantart = ""
+    Behance = ""
+    Dribbble = ""
+    Wordpress = ""
+    Vine = ""
+    Googlescholar = ""
+    Researchgate = ""
+    Mastodon = ""
+    Thingiverse = ""
+    Devto = ""
+    Gitea = ""
+    XMPP = ""
+    Matrix = ""
+    Bilibili = ""
+    Email = ""
+    RSS = ""
+
+  [params.page]
+    [params.page.toc]
+      enable = true
+      auto = true
+    [params.page.code]
+      copy = true
+      maxShownLines = 50
 
 [menu]
   [[menu.main]]
-    name = "首页"
     weight = 1
+    identifier = "home"
+    name = "首页"
     url = "/"
   [[menu.main]]
-    name = "文章"
     weight = 2
+    identifier = "posts"
+    name = "文章"
     url = "/posts/"
   [[menu.main]]
-    name = "分类"
     weight = 3
+    identifier = "tags"
+    name = "标签"
+    url = "/tags/"
+  [[menu.main]]
+    weight = 4
+    identifier = "categories"
+    name = "分类"
     url = "/categories/"
   [[menu.main]]
+    weight = 5
+    identifier = "about"
     name = "关于"
-    weight = 4
     url = "/about/"

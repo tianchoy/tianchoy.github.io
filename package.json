@@ -1,0 +1,8 @@
+{
+  "name": "blogData-main",
+  "private": true,
+  "description": "Hugo 博客（KeepIt 主题）+ 本地发布服务",
+  "scripts": {
+    "publish": "node publish-server.mjs"
+  }
+}

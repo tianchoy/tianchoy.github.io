@@ -1,7 +1,0 @@
-mediaTypes:
-  font/woff:
-    suffixes:
-      - woff
-  font/woff2:
-    suffixes:
-      - woff2

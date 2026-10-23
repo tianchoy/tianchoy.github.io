@@ -25,6 +25,8 @@ summaryLength = 30
 
 [params]
   defaultTheme = "auto"
+  # 给 CSS/JS 资源加内容哈希，避免 GitHub Pages CDN 缓存旧样式
+  fingerprint = "sha256"
   dateFormat = "2006-01-02"
   title = "特严赤傲"
   description = "小田的github博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等等的记录。"

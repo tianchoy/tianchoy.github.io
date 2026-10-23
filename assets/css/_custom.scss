@@ -178,3 +178,18 @@
     display: none;
   }
 }
+
+// 暗色模式：正文/元信息改用亮色，避免深色文字糊在深色背景上看不清
+body[theme="dark"] {
+  .single .content {
+    color: #c9ccd1;
+  }
+
+  .single .post-meta {
+    color: #9296a0;
+  }
+
+  .about-page .about-content {
+    color: #c9ccd1;
+  }
+}

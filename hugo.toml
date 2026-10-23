@@ -36,6 +36,19 @@ summaryLength = 30
   description = "小田的github博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等等的记录。"
   keywords = "博客,前端,Vue,React,Flutter,生活随笔"
 
+  # 站内搜索：KeepIt 的 lunr 方案，索引为构建产物 /index.json
+  # 中文分词由 assets/lib/lunr/lunr.segmentit.js 覆盖主题的 3.7MB 词典实现
+  [params.search]
+    enable = true
+    type = "lunr"
+    # 每条记录（按 h2/h3 切片）保留的正文字符数
+    contentLength = 4000
+    placeholder = "搜索文章"
+    maxResultLength = 10
+    snippetLength = 40
+    highlightTag = "em"
+    absoluteURL = false
+
   [params.header]
     [params.header.title]
       name = "特严赤傲"

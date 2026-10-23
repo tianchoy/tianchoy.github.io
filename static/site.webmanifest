@@ -1,0 +1,18 @@
+{
+  "name": "特严赤傲",
+  "short_name": "特严赤傲",
+  "description": "小田的 github 博客，记录学习积累、问题笔记、代码分享与生活随笔。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/images/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

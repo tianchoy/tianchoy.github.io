@@ -20,6 +20,10 @@ summaryLength = 30
 [pagination]
   pagerSize = 10
 
+# 生成首页 JSON 搜索索引（KeepIt 的 lunr 搜索需要 /index.json）
+[outputs]
+  home = ["HTML", "JSON"]
+
 [taxonomies]
   category = "categories"
 

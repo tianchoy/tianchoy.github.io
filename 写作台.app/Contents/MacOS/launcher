@@ -1,0 +1,64 @@
+#!/bin/bash
+# 写作台启动器
+#
+# 双击本 App 时：
+#   1. 服务已在运行 → 直接打开浏览器
+#   2. 服务没运行   → 用 bun（没有则 node）在后台起服务，就绪后打开浏览器
+#   3. 起不来       → 弹窗把日志最后几行给你看
+#
+# 不想留在后台时，页面右上角「关闭服务」即可。
+
+set -u
+
+# 写作台.app/Contents/MacOS/launcher → 上三级就是项目根目录
+ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
+PORT="${PORT:-4321}"
+OPEN_PATH="${OPEN_PATH:-/publish}"
+URL="http://127.0.0.1:${PORT}${OPEN_PATH}"
+LOG="$ROOT/.writing-desk.log"
+
+# 双击启动时 PATH 里没有 Homebrew / Bun，这里补齐
+export PATH="/opt/homebrew/bin:/usr/local/bin:${HOME}/.bun/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+alive() {
+  curl -fsS -o /dev/null --max-time 1 "http://127.0.0.1:${PORT}/api/ping" 2>/dev/null
+}
+
+fail() {
+  osascript -e 'display alert "写作台启动失败" message "'"${1//\"/\\\"}"'" as critical' >/dev/null 2>&1
+  exit 1
+}
+
+if alive; then
+  open "$URL"
+  exit 0
+fi
+
+if command -v bun >/dev/null 2>&1; then
+  RUNNER="bun"
+elif command -v node >/dev/null 2>&1; then
+  RUNNER="node"
+else
+  fail "找不到 Bun 或 Node.js，无法启动本地服务。请先安装其中一个。"
+fi
+
+cd "$ROOT" || fail "进不去项目目录：$ROOT"
+
+# 端口被别的程序占用时不覆盖，直接提示
+if lsof -nP -iTCP:"$PORT" -sTCP:LISTEN >/dev/null 2>&1; then
+  fail "端口 ${PORT} 已被其他程序占用，请先关闭它（或换端口：PORT=4333 后重试）。"
+fi
+
+echo "=== $(date '+%Y-%m-%d %H:%M:%S') 启动 $RUNNER ===" >> "$LOG"
+nohup "$RUNNER" publish-server.mjs >> "$LOG" 2>&1 &
+
+for _ in $(seq 1 60); do
+  if alive; then
+    open "$URL"
+    exit 0
+  fi
+  sleep 0.25
+done
+
+REASON="$(tail -n 15 "$LOG" 2>/dev/null || echo '没有日志输出')"
+fail "服务在 15 秒内没有就绪，日志末尾：\n${REASON}"

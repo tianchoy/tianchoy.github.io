@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>站点设置 · 写作台</title>
+<link rel="stylesheet" href="/ui/ui.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/publish">
+      <span class="brand-mark">写</span>
+      <span class="brand-text">写作台<em>特严赤傲</em></span>
+    </a>
+    <nav class="nav">
+      <a class="nav-link" data-page="publish" href="/publish">写文章</a>
+      <a class="nav-link" data-page="admin" href="/admin">站点设置</a>
+      <a class="nav-link" href="/" target="_blank">预览站点 ↗</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="status-chip">本地服务运行中</span>
+      <button class="btn btn-ghost btn-sm" id="btnShutdown">关闭服务</button>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+  <div class="page-head">
+    <h1>站点设置</h1>
+    <p>改动直接写入 <code style="font-family:var(--mono)">hugo.toml</code> 与 <code style="font-family:var(--mono)">static/images/</code>，保存后可选择立即发布。</p>
+  </div>
+
+  <div id="result"></div>
+
+  <div class="stack">
+    <!-- 站点标识 -->
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">站点标识</span>
+        <span class="hint">浏览器标题、页头、社交分享都用这里的名称</span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field">
+            <label for="siteTitle">站点名称</label>
+            <input id="siteTitle" type="text" placeholder="特严赤傲" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="profileTitle">首页大标题</label>
+            <input id="profileTitle" type="text" placeholder="留空则用站点名称" autocomplete="off">
+          </div>
+          <div class="field full">
+            <label for="description">站点描述（meta description / 分享摘要）</label>
+            <input id="description" type="text" placeholder="小田的 github 博客…" autocomplete="off">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 头像与副标题 -->
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">头像与副标题</span>
+        <span class="hint">首页个人资料区</span>
+      </div>
+      <div class="card-body">
+        <div class="profile-editor">
+          <div>
+            <div class="avatar-row">
+              <img class="avatar-preview" id="avatarPreview" alt="头像预览">
+              <div class="avatar-actions">
+                <div class="dropzone" id="dropzone">点击选择，或把图片拖到这里 · JPG / PNG / WebP / GIF</div>
+                <span class="hint">保存时会自动缩到 512px 以内，并写入 static/images/</span>
+              </div>
+              <input type="file" id="avatarFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
+            </div>
+
+            <div class="form-grid" style="margin-top:18px;">
+              <div class="field full">
+                <label for="subtitle">副标题</label>
+                <input id="subtitle" type="text" placeholder="乙火" autocomplete="off">
+              </div>
+            </div>
+          </div>
+
+          <div class="profile-preview">
+            <div class="profile-preview-label">首页效果预览</div>
+            <div class="profile-preview-card">
+              <img class="pp-avatar" id="ppAvatar" alt="">
+              <div class="pp-title" id="ppTitle">—</div>
+              <div class="pp-subtitle" id="ppSubtitle"></div>
+              <div class="pp-social" id="ppSocial"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 社交媒体 -->
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">社交媒体</span>
+        <span class="hint">按顺序显示在首页头像下方</span>
+      </div>
+      <div class="card-body">
+        <div class="social-list" id="socialList"></div>
+        <div class="social-add">
+          <select id="newSocialKey"><option value="">选择平台…</option></select>
+          <input id="newSocialValue" type="text" placeholder="账号名或完整链接，例如 tianchoy" autocomplete="off">
+          <button class="btn btn-soft" id="btnAddSocial">添加</button>
+        </div>
+        <div class="hint" style="margin-top:8px;">值可以填账号名（按平台前缀拼成链接），也可以直接填 <code>https://…</code> 完整地址；留空即移除。</div>
+      </div>
+    </section>
+  </div>
+
+  <div class="action-bar">
+    <span class="hint" id="dirtyHint"></span>
+    <span class="spacer"></span>
+    <button class="btn btn-ghost" id="btnReload">重新读取</button>
+    <button class="btn btn-ghost" id="btnSave">仅保存</button>
+    <button class="btn btn-primary" id="btnSaveDeploy">保存并发布</button>
+  </div>
+</main>
+
+<script src="/ui/ui.js"></script>
+<script>
+(function () {
+  const { api, toast, esc, initTopbar } = window.WB;
+  initTopbar();
+
+  const $ = (id) => document.getElementById(id);
+  const siteTitleEl = $('siteTitle');
+  const profileTitleEl = $('profileTitle');
+  const descEl = $('description');
+  const subtitleEl = $('subtitle');
+  const avatarImg = $('avatarPreview');
+  const fileInput = $('avatarFile');
+  const dropzone = $('dropzone');
+  const listEl = $('socialList');
+  const newKeyEl = $('newSocialKey');
+  const newValueEl = $('newSocialValue');
+  const resultEl = $('result');
+  const dirtyHint = $('dirtyHint');
+
+  let catalog = [];
+  let social = [];           // [{key, value}]
+  let pendingAvatar = null;  // File
+  let dirty = false;
+
+  function markDirty() {
+    dirty = true;
+    dirtyHint.textContent = '有未保存的改动';
+    updateProfilePreview();
+  }
+
+  function clearDirty() {
+    dirty = false;
+    dirtyHint.textContent = '';
+  }
+
+  function updateProfilePreview() {
+    $('ppAvatar').src = avatarImg.src;
+    $('ppTitle').textContent =
+      profileTitleEl.value.trim() || siteTitleEl.value.trim() || '站点名称';
+    $('ppSubtitle').textContent = subtitleEl.value.trim();
+    const icons = social
+      .filter((s) => String(s.value || '').trim())
+      .map((s) => {
+        const c = catalog.find((x) => x.key.toLowerCase() === String(s.key).toLowerCase());
+        return `<i class="${esc(c && c.icon ? c.icon : 'fas fa-link fa-fw')}" title="${esc(c ? c.label : s.key)}"></i>`;
+      });
+    $('ppSocial').innerHTML = icons.join('');
+  }
+
+  /* ---------- 数据加载 ---------- */
+
+  function fill(data) {
+    if (data.catalog) catalog = data.catalog;
+    const site = data.site || {};
+    siteTitleEl.value = site.title || '';
+    profileTitleEl.value = site.profileTitle || '';
+    descEl.value = site.description || '';
+    subtitleEl.value = site.subtitle || '';
+    avatarImg.src = site.avatarURL || '/images/profile.jpg';
+    pendingAvatar = null;
+
+    social = (data.social || []).map((s) => ({ key: s.key, value: s.value }));
+    renderSocial();
+    fillAddOptions();
+    updateProfilePreview();
+
+    clearDirty();
+    resultEl.innerHTML = '';
+  }
+
+  async function load() {
+    try {
+      fill(await api('/api/site'));
+    } catch (e) {
+      toast('读取站点配置失败：' + e.message, 'err', 4000);
+    }
+  }
+
+  /* ---------- 社交列表 ---------- */
+
+  function meta(key) {
+    return catalog.find((c) => c.key.toLowerCase() === String(key).toLowerCase()) || null;
+  }
+
+  function urlOf(key, value) {
+    const c = meta(key);
+    const v = String(value || '').trim();
+    if (!v) return '';
+    if (/^(https?:\/\/|mailto:|\/)/i.test(v)) return v;
+    if (!c) return v;
+    if (c.template) return c.template.replace('%v', v);
+    if (c.prefix) return c.prefix.replace(/\/+$/, '') + '/' + v.replace(/^\/+/, '');
+    return v;
+  }
+
+  function renderSocial() {
+    listEl.innerHTML = '';
+    if (!social.length) {
+      listEl.innerHTML = '<div class="empty">还没有配置社交链接</div>';
+      return;
+    }
+    social.forEach((item, index) => {
+      const c = meta(item.key);
+      const row = document.createElement('div');
+      row.className = 'social-item';
+      row.innerHTML =
+        `<div class="social-name">${c && c.icon ? `<i class="${esc(c.icon)}"></i>` : ''}<span>${esc(c ? c.label : item.key)}</span></div>
+         <div>
+           <input type="text" value="${esc(item.value)}" data-index="${index}" placeholder="账号名或完整链接" autocomplete="off">
+           <div class="url-hint" data-url="${index}"></div>
+         </div>
+         <button class="btn btn-ghost btn-sm" data-remove="${index}" title="移除">移除</button>`;
+
+      const input = row.querySelector('input');
+      const hint = row.querySelector('[data-url]');
+      const syncHint = () => {
+        const u = urlOf(item.key, input.value);
+        hint.textContent = u && u !== input.value.trim() ? u : '';
+      };
+      syncHint();
+
+      input.addEventListener('input', () => {
+        social[index].value = input.value;
+        syncHint();
+        markDirty();
+      });
+      row.querySelector('[data-remove]').addEventListener('click', () => {
+        social.splice(index, 1);
+        renderSocial();
+        fillAddOptions();
+        markDirty();
+      });
+
+      listEl.appendChild(row);
+    });
+  }
+
+  function fillAddOptions() {
+    const used = new Set(social.map((s) => s.key.toLowerCase()));
+    newKeyEl.innerHTML = '<option value="">选择平台…</option>';
+    for (const c of catalog) {
+      if (used.has(c.key.toLowerCase())) continue;
+      const o = document.createElement('option');
+      o.value = c.key;
+      o.textContent = c.label;
+      newKeyEl.appendChild(o);
+    }
+  }
+
+  $('btnAddSocial').addEventListener('click', () => {
+    const key = newKeyEl.value;
+    const value = newValueEl.value.trim();
+    if (!key) { toast('先选一个平台', 'err'); newKeyEl.focus(); return; }
+    if (!value) { toast('填一下账号名或链接', 'err'); newValueEl.focus(); return; }
+    social.push({ key, value });
+    newValueEl.value = '';
+    renderSocial();
+    fillAddOptions();
+    markDirty();
+  });
+
+  newValueEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); $('btnAddSocial').click(); }
+  });
+
+  /* ---------- 头像 ---------- */
+
+  function pickFile(file) {
+    if (!file) return;
+    if (!/^image\/(jpeg|png|webp|gif)$/.test(file.type)) {
+      toast('只支持 JPG / PNG / WebP / GIF', 'err');
+      return;
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      toast('图片超过 12MB，请先压缩', 'err');
+      return;
+    }
+    pendingAvatar = file;
+    avatarImg.src = URL.createObjectURL(file);
+    dropzone.textContent = `已选择：${file.name}（保存后生效）`;
+    updateProfilePreview();
+    markDirty();
+  }
+
+  dropzone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => pickFile(fileInput.files[0]));
+
+  ['dragenter', 'dragover'].forEach((ev) =>
+    dropzone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      dropzone.classList.add('is-over');
+    })
+  );
+  ['dragleave', 'drop'].forEach((ev) =>
+    dropzone.addEventListener(ev, (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('is-over');
+    })
+  );
+  dropzone.addEventListener('drop', (e) => {
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    pickFile(f);
+  });
+
+  /* ---------- 保存 ---------- */
+
+  [siteTitleEl, profileTitleEl, descEl, subtitleEl].forEach((el) =>
+    el.addEventListener('input', markDirty)
+  );
+
+  function renderResult(data) {
+    const deploy = data.deploy || {};
+    const log = deploy.output
+      ? `<details><summary class="hint" style="cursor:pointer;margin-top:8px;">部署日志（${deploy.ms || 0} ms）</summary><pre style="margin:8px 0 0;max-height:240px;overflow:auto;font-family:var(--mono);font-size:11.5px;white-space:pre-wrap">${esc(deploy.output)}</pre></details>`
+      : '';
+    if (data.ok) {
+      resultEl.innerHTML =
+        `<div class="result ok">
+           <div class="result-head">✅ 已保存</div>
+           <div class="result-line">${deploy.skipped ? '仅写入本地文件，未推送站点' : '已推送仓库，GitHub Actions 构建中（约 30～60 秒）'}</div>
+           ${log}
+         </div>`;
+    } else {
+      resultEl.innerHTML =
+        `<div class="result err">
+           <div class="result-head">❌ 保存/发布失败</div>
+           <div class="result-line">${esc(data.error || '未知错误')}</div>
+           ${log}
+         </div>`;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  let saving = false;
+  async function save(deploy) {
+    if (saving) return;
+    if (!siteTitleEl.value.trim()) { toast('站点名称不能为空', 'err'); siteTitleEl.focus(); return; }
+
+    saving = true;
+    const buttons = [$('btnSave'), $('btnSaveDeploy')];
+    buttons.forEach((b) => (b.disabled = true));
+
+    try {
+      if (pendingAvatar) {
+        const res = await fetch('/api/avatar', {
+          method: 'POST',
+          headers: { 'Content-Type': pendingAvatar.type },
+          body: pendingAvatar,
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || '头像上传失败');
+        avatarImg.src = data.avatarURL;
+        pendingAvatar = null;
+        dropzone.textContent = '点击选择，或把图片拖到这里 · JPG / PNG / WebP / GIF';
+        toast('头像已更新');
+      }
+
+      const data = await api('/api/site', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          siteTitle: siteTitleEl.value.trim(),
+          profileTitle: profileTitleEl.value.trim(),
+          description: descEl.value.trim(),
+          subtitle: subtitleEl.value.trim(),
+          social,
+          deploy: Boolean(deploy),
+        }),
+      });
+
+      fill(data);
+      renderResult(data);
+      toast(deploy ? '已保存并发布' : '已保存到本地');
+    } catch (e) {
+      renderResult(Object.assign({ ok: false, error: e.message }, e.payload || {}));
+      toast('失败：' + e.message, 'err', 4200);
+    } finally {
+      saving = false;
+      buttons.forEach((b) => (b.disabled = false));
+    }
+  }
+
+  $('btnSave').addEventListener('click', () => save(false));
+  $('btnSaveDeploy').addEventListener('click', () => save(true));
+  $('btnReload').addEventListener('click', () => {
+    if (dirty && !confirm('放弃未保存的改动，重新读取？')) return;
+    load();
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if (dirty) {
+      e.preventDefault();
+      e.returnValue = '';
+    }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>

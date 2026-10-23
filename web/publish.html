@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>写文章 · 写作台</title>
+<link rel="stylesheet" href="/ui/ui.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/publish">
+      <span class="brand-mark">写</span>
+      <span class="brand-text">写作台<em>特严赤傲</em></span>
+    </a>
+    <nav class="nav">
+      <a class="nav-link" data-page="publish" href="/publish">写文章</a>
+      <a class="nav-link" data-page="admin" href="/admin">站点设置</a>
+      <a class="nav-link" href="/" target="_blank">预览站点 ↗</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="status-chip">本地服务运行中</span>
+      <button class="btn btn-ghost btn-sm" id="btnShutdown">关闭服务</button>
+    </div>
+  </div>
+</header>
+
+<main class="workspace">
+  <section class="pane editor">
+    <div class="pane-head">
+      <input class="title-input" id="title" type="text" placeholder="文章标题…" autocomplete="off" spellcheck="false">
+      <div class="meta-row">
+        <div class="field">
+          <label for="category">分类</label>
+          <select id="category"><option value="">加载中…</option></select>
+        </div>
+        <div class="field">
+          <label for="tags">标签（逗号分隔，可留空）</label>
+          <input id="tags" type="text" placeholder="vue3, 踩坑记录" autocomplete="off">
+        </div>
+      </div>
+    </div>
+
+    <div class="editor-toolbar">
+      <button class="tool-btn" data-wrap="## " data-line="1" title="二级标题">H2</button>
+      <button class="tool-btn" data-wrap="### " data-line="1" title="三级标题">H3</button>
+      <span class="tool-sep"></span>
+      <button class="tool-btn" data-wrap="**" title="加粗"><b>B</b></button>
+      <button class="tool-btn" data-wrap="*" title="斜体"><i>I</i></button>
+      <button class="tool-btn" data-wrap="`" title="行内代码">&lt;/&gt;</button>
+      <span class="tool-sep"></span>
+      <button class="tool-btn" id="tb-code" title="代码块">{ }</button>
+      <button class="tool-btn" data-wrap="> " data-line="1" title="引用">❝</button>
+      <button class="tool-btn" data-wrap="- " data-line="1" title="列表">≡</button>
+      <span class="tool-sep"></span>
+      <button class="tool-btn" id="tb-link" title="插入链接">链接</button>
+      <button class="tool-btn" id="tb-image" title="插入图片">图片</button>
+      <button class="tool-btn" id="tb-table" title="插入表格">表格</button>
+    </div>
+
+    <div class="editor-body">
+      <textarea id="content" placeholder="在这里写正文，支持 Markdown。
+
+## 小标题
+正文段落…
+
+- 列表项
+- 列表项
+
+```js
+console.log('代码块')
+```"></textarea>
+    </div>
+
+    <div class="pane-foot">
+      <span id="wordcount">0 字</span>
+      <span class="hint" id="saveState">草稿自动存在本机</span>
+      <button class="btn btn-ghost btn-sm" id="btnDiscard" hidden>丢弃草稿</button>
+      <span class="spacer"></span>
+      <span class="hint" title="⌘/Ctrl + Enter 直接发布">⌘↵ 发布</span>
+      <label class="switch"><input type="checkbox" id="dryRun">仅存本地</label>
+      <button class="btn btn-primary" id="btnPublish">发布</button>
+    </div>
+  </section>
+
+  <aside class="pane preview">
+    <div class="pane-head" style="flex-direction:row;align-items:center;gap:8px;padding:11px 16px;">
+      <span class="card-title">预览</span>
+      <span class="chip chip-accent">实时</span>
+      <span class="hint" style="margin-left:auto;">排版近似线上效果</span>
+    </div>
+    <div class="preview-scroll">
+      <div id="result"></div>
+      <article class="article" id="preview">
+        <div class="preview-empty">左侧写下标题和正文，这里会实时预览。</div>
+      </article>
+    </div>
+  </aside>
+</main>
+
+<script src="/ui/ui.js"></script>
+<script>
+(function () {
+  const { api, toast, renderMarkdown, countWords, esc, initTopbar } = window.WB;
+  initTopbar();
+
+  const $ = (id) => document.getElementById(id);
+  const titleEl = $('title');
+  const catEl = $('category');
+  const tagsEl = $('tags');
+  const contentEl = $('content');
+  const previewEl = $('preview');
+  const resultEl = $('result');
+  const wordEl = $('wordcount');
+  const saveStateEl = $('saveState');
+  const discardBtn = $('btnDiscard');
+  const publishBtn = $('btnPublish');
+  const dryRunEl = $('dryRun');
+
+  const DRAFT_KEY = 'wb.draft.v1';
+  const NEW_CAT = '__new__';
+
+  /* ---------- 分类 ---------- */
+
+  async function loadCategories() {
+    try {
+      const data = await api('/api/categories');
+      catEl.innerHTML = '';
+      const cats = data.categories || [];
+      const placeholder = document.createElement('option');
+      placeholder.value = '';
+      placeholder.textContent = cats.length ? '选择分类…' : '（尚无分类）';
+      catEl.appendChild(placeholder);
+      for (const c of cats) {
+        const o = document.createElement('option');
+        o.value = c;
+        o.textContent = c;
+        catEl.appendChild(o);
+      }
+      const add = document.createElement('option');
+      add.value = NEW_CAT;
+      add.textContent = '＋ 新建分类…';
+      catEl.appendChild(add);
+      const draft = readDraft();
+      if (draft && draft.category && cats.includes(draft.category)) catEl.value = draft.category;
+    } catch (e) {
+      catEl.innerHTML = '<option value="">读取失败</option>';
+    }
+  }
+
+  catEl.addEventListener('change', () => {
+    if (catEl.value !== NEW_CAT) return;
+    const name = (prompt('新分类名称（会成为 content/posts 下的目录名）') || '').trim();
+    if (!name) {
+      catEl.selectedIndex = 0;
+      return;
+    }
+    const o = document.createElement('option');
+    o.value = name;
+    o.textContent = name;
+    catEl.insertBefore(o, catEl.lastElementChild);
+    catEl.value = name;
+    updatePreview();
+    saveDraftSoon();
+  });
+
+  /* ---------- 工具栏 ---------- */
+
+  function surround(before, after) {
+    const { selectionStart: s, selectionEnd: e, value } = contentEl;
+    const sel = value.slice(s, e);
+    contentEl.setRangeText(before + sel + after, s, e, 'end');
+    if (!sel) contentEl.setSelectionRange(s + before.length, s + before.length);
+    contentEl.focus();
+    onInput();
+  }
+
+  function prefixLines(prefix) {
+    const { selectionStart: s, selectionEnd: e, value } = contentEl;
+    let start = value.lastIndexOf('\n', s - 1) + 1;
+    let end = value.indexOf('\n', e);
+    if (end === -1) end = value.length;
+    const block = value.slice(start, end);
+    const lines = block.split('\n').map((l) => (l.trim() ? prefix + l : l));
+    const next = lines.join('\n');
+    contentEl.setRangeText(next, start, end, 'end');
+    contentEl.focus();
+    onInput();
+  }
+
+  document.querySelectorAll('[data-wrap]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const wrap = btn.getAttribute('data-wrap');
+      if (btn.hasAttribute('data-line')) prefixLines(wrap);
+      else surround(wrap, wrap);
+    });
+  });
+
+  $('tb-code').addEventListener('click', () => {
+    const { selectionStart: s, selectionEnd: e, value } = contentEl;
+    const sel = value.slice(s, e);
+    const block = sel ? (sel.includes('\n') ? '```\n' + sel + '\n```' : '`' + sel + '`') : '```js\n\n```';
+    contentEl.setRangeText(block, s, e, 'end');
+    if (!sel) {
+      const pos = s + 5;
+      contentEl.setSelectionRange(pos, pos);
+    }
+    contentEl.focus();
+    onInput();
+  });
+
+  $('tb-link').addEventListener('click', () => {
+    const url = prompt('链接地址', 'https://');
+    if (!url) return;
+    const sel = contentEl.value.slice(contentEl.selectionStart, contentEl.selectionEnd) || '链接文字';
+    surround('[', `](${url})`);
+    contentEl.value = contentEl.value.replace('[链接文字]', '[' + sel + ']');
+    onInput();
+  });
+
+  $('tb-image').addEventListener('click', () => {
+    const url = prompt('图片地址（可先用图床拿到链接）', 'https://');
+    if (!url) return;
+    surround('![图片](' + url + ')', '');
+  });
+
+  $('tb-table').addEventListener('click', () => {
+    surround('\n| 列 1 | 列 2 |\n| --- | --- |\n| 内容 | 内容 |\n\n', '');
+  });
+
+  contentEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      contentEl.setRangeText('  ', contentEl.selectionStart, contentEl.selectionEnd, 'end');
+      onInput();
+    }
+  });
+
+  /* ---------- 预览 ---------- */
+
+  function updatePreview() {
+    const title = titleEl.value.trim();
+    const body = contentEl.value;
+    const cat = catEl.value && catEl.value !== NEW_CAT ? catEl.value : '未分类';
+    const today = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const date = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+    if (!title && !body.trim()) {
+      previewEl.innerHTML = '<div class="preview-empty">左侧写下标题和正文，这里会实时预览。</div>';
+      return;
+    }
+
+    const tags = (tagsEl.value || '')
+      .split(/[,，]/)
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    previewEl.innerHTML =
+      `<h1 class="article-title">${esc(title || '（未命名）')}</h1>` +
+      `<div class="article-meta"><span>${esc(date)}</span><span>${esc(cat)}</span>` +
+      (tags.length ? `<span># ${esc(tags.join(' · '))}</span>` : '') +
+      `</div>` +
+      `<div class="article-body">${renderMarkdown(body) || '<p class="preview-empty">（正文为空）</p>'}</div>`;
+  }
+
+  function updateCount() {
+    const { chars, words } = countWords(contentEl.value);
+    wordEl.textContent = `${words} 字 · ${chars} 字符`;
+  }
+
+  /* ---------- 草稿 ---------- */
+
+  let draftTimer = null;
+  function saveDraft() {
+    const data = {
+      title: titleEl.value,
+      category: catEl.value === NEW_CAT ? '' : catEl.value,
+      tags: tagsEl.value,
+      content: contentEl.value,
+      ts: Date.now(),
+    };
+    try {
+      if (!data.title && !data.content.trim()) {
+        localStorage.removeItem(DRAFT_KEY);
+        saveStateEl.textContent = '草稿自动存在本机';
+        discardBtn.hidden = true;
+        return;
+      }
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
+      const t = new Date(data.ts);
+      saveStateEl.textContent = `草稿已保存 ${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`;
+      discardBtn.hidden = false;
+    } catch (e) {
+      saveStateEl.textContent = '草稿保存失败（本机存储不可用）';
+    }
+  }
+
+  function saveDraftSoon() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraft, 600);
+  }
+
+  function readDraft() {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function restoreDraft() {
+    const d = readDraft();
+    if (!d) return false;
+    if (!d.title && !String(d.content || '').trim()) return false;
+    titleEl.value = d.title || '';
+    tagsEl.value = d.tags || '';
+    contentEl.value = d.content || '';
+    discardBtn.hidden = false;
+    saveStateEl.textContent = '已恢复上次未发布的草稿';
+    return true;
+  }
+
+  discardBtn.addEventListener('click', () => {
+    if (!confirm('丢弃本机草稿？正文会被清空。')) return;
+    localStorage.removeItem(DRAFT_KEY);
+    titleEl.value = '';
+    tagsEl.value = '';
+    contentEl.value = '';
+    discardBtn.hidden = true;
+    saveStateEl.textContent = '草稿已清空';
+    onInput();
+  });
+
+  /* ---------- 输入联动 ---------- */
+
+  function onInput() {
+    updatePreview();
+    updateCount();
+    saveDraftSoon();
+  }
+
+  [titleEl, tagsEl, contentEl].forEach((el) => el.addEventListener('input', onInput));
+  catEl.addEventListener('change', onInput);
+
+  /* ---------- 发布 ---------- */
+
+  function renderResult(ok, payload) {
+    const deploy = payload.deploy || {};
+    const log = deploy.output ? `<details><summary class="hint" style="cursor:pointer;margin-top:8px;">部署日志（${deploy.ms || 0} ms）</summary><pre>${esc(deploy.output)}</pre></details>` : '';
+    if (ok) {
+      resultEl.innerHTML =
+        `<div class="result ok">
+          <div class="result-head">✅ 已发布</div>
+          <div class="result-line">文件：${esc(payload.file || '')}</div>
+          <div class="result-line">线上：<a href="${esc(payload.permalink || '#')}" target="_blank" rel="noopener">${esc(payload.permalink || '')}</a></div>
+          <div class="result-line">${deploy.skipped ? '（仅本地生成，未推送）' : 'GitHub Actions 已触发，通常 30～60 秒后可访问'}</div>
+          ${log}
+        </div>`;
+    } else {
+      resultEl.innerHTML =
+        `<div class="result err">
+          <div class="result-head">❌ 没发出去</div>
+          <div class="result-line">${esc(payload.error || '未知错误')}</div>
+          ${payload.file ? `<div class="result-line">文件已生成：${esc(payload.file)}</div>` : ''}
+          ${log}
+        </div>`;
+    }
+    document.querySelector('.preview-scroll').scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  let publishing = false;
+  async function publish() {
+    if (publishing) return;
+    const title = titleEl.value.trim();
+    const category = catEl.value === NEW_CAT ? '' : catEl.value;
+    const content = contentEl.value;
+
+    if (!title) { toast('先写个标题吧', 'err'); titleEl.focus(); return; }
+    if (!category) { toast('选一个分类', 'err'); catEl.focus(); return; }
+    if (!content.trim()) { toast('正文还是空的', 'err'); contentEl.focus(); return; }
+
+    publishing = true;
+    const original = publishBtn.textContent;
+    publishBtn.disabled = true;
+    publishBtn.textContent = '发布中…';
+    saveDraft();
+    const started = Date.now();
+
+    try {
+      const data = await api('/api/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category,
+          title,
+          content,
+          tags: (tagsEl.value || '').split(/[,，]/).map((t) => t.trim()).filter(Boolean),
+          dryRun: dryRunEl.checked,
+        }),
+      });
+      renderResult(true, data);
+      toast(`发布成功 · ${Math.round((Date.now() - started) / 1000)}s`, 'ok');
+      localStorage.removeItem(DRAFT_KEY);
+      discardBtn.hidden = true;
+      saveStateEl.textContent = '已发布，草稿已清空';
+    } catch (e) {
+      renderResult(false, Object.assign({ error: e.message }, e.payload || {}));
+      toast('发布失败：' + e.message, 'err', 4200);
+      saveStateEl.textContent = '发布失败，草稿仍保留';
+    } finally {
+      publishing = false;
+      publishBtn.disabled = false;
+      publishBtn.textContent = original;
+    }
+  }
+
+  publishBtn.addEventListener('click', publish);
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      publish();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      saveDraft();
+      toast('草稿已保存到本机');
+    }
+  });
+
+  /* ---------- 启动 ---------- */
+
+  (async function boot() {
+    await loadCategories();
+    const restored = restoreDraft();
+    onInput();
+    if (restored) toast('已恢复上次未发布的草稿');
+    (titleEl.value ? contentEl : titleEl).focus();
+    titleEl.focus();
+  })();
+})();
+</script>
+</body>
+</html>

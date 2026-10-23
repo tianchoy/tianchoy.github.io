@@ -12,3 +12,4 @@
 - 文章 frontmatter 约定：title / date / categories / draft（tags 字段保留但未启用标签页）。
 - 自定义样式统一在 `assets/css/_custom.scss`（KeepIt `style.scss` 末尾 `@import "_custom"`），不直接改主题。列表标题 .95rem、详情正文 .92rem、`.archive-item` 加间距、`.post-info` 让「更新于」与分享图标同行左右分列。
 - 关于页模板：`layouts/about.html`（root page 需放 `layouts/about.html`，不是 `layouts/page/`），`about.md` 加 `layout: "about"`。
+- 站内搜索：KeepIt lunr + 构建产物 `/index.json`（`[outputs] home` 含 JSON）。中文分词由站点 `assets/lib/lunr/lunr.segmentit.js`（5KB）同名覆盖主题 3.79MB 词典实现：bigram+单字切分、`lunr.queryHandler` 加 `+` 全命中、重写 `lunr.zh` 对齐 searchPipeline、包装 `window.autocomplete` 给 suggestion 模板补 `{query}`。lunr/autocomplete 已本地化（`assets/data/cdn/jsdelivr.yml` 注掉对应 CDN 项）。`[params.search]` 在 hugo.toml 显式声明。部署时 HTTPS 推送会被代理 502，用 `git push git@github.com:tianchoy/tianchoy.github.io.git main`。

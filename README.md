@@ -7,6 +7,14 @@
 
 ## 日常使用
 
+### 写作台（推荐）
+
+双击根目录的 **`写作台.app`** 即可：已在运行就打开浏览器，没运行就后台拉起服务再打开。
+
+- `/publish` 写文章：左侧编辑 + 右侧实时预览，分类/标签、草稿自动存在本机、`⌘↵` 直接发布。
+- `/admin` 站点设置：换头像、改站点名称与副标题、增删社交链接，可「仅保存」或「保存并发布」。
+- 右上角「关闭服务」可停掉后台进程；也可以命令行 `bun run publish` 启动。
+
 本地预览（含草稿）：
 
 ```bash
@@ -18,6 +26,9 @@ hugo server -D
 ```bash
 bash deploy.sh
 ```
+
+> 写作台调用 `deploy.sh` 部署，因此它需要 `git push` 可用。若走 HTTPS 被代理拦截，可把远程换成 SSH：
+> `git remote set-url origin git@github.com:tianchoy/tianchoy.github.io.git`
 
 ## 发布机制
 
@@ -35,7 +46,10 @@ bash deploy.sh
 | `themes/keepit/` | 主题（vendored） |
 | `assets/css/_custom.scss` | 自定义样式覆写 |
 | `layouts/` | 模板覆写（about 页等） |
-| `publish-server.mjs` | 本地一键发布服务（`npm run publish`） |
+| `写作台.app` | 可双击的本地写作台启动器 |
+| `publish-server.mjs` | 写作台服务（页面 / API / 部署） |
+| `web/` | 写作台前端页面（publish / admin / 共用样式脚本） |
+| `lib/site-config.mjs` | `hugo.toml` 与社交配置的读写 |
 
 ## 访问量统计
 

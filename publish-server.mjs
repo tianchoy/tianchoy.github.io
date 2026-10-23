@@ -1,8 +1,11 @@
-// 本地发布服务（仅绑定 127.0.0.1）
-// 提供站内发布页 /publish：标题 + 内容 + 分类下拉（读取全部分类）+ 发布按钮
-// 点击发布 → 在 content/posts/<分类>/ 下生成 md → 运行 bash deploy.sh 推送 git
+// 本地写作台服务（仅绑定 127.0.0.1）
 //
-// 用法：node publish-server.mjs   （然后浏览器打开 http://127.0.0.1:4321/publish ）
+// 页面：
+//   /publish  发布文章
+//   /admin    站点设置（头像 / 名称 / 副标题 / 社交链接）
+//   /         预览构建后的站点（public/index.html）
+//
+// 用法：双击根目录的「写作台.app」，或命令行 `bun run publish` / `npm run publish`。
 
 import http from "node:http";
 import nodeFs from "node:fs";
@@ -10,18 +13,30 @@ import { promises as fsp } from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import {
+  ROOT,
+  readSiteSettings,
+  saveSiteSettings,
+  saveAvatarFile,
+  avatarExtFor,
+} from "./lib/site-config.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = __dirname;
 const PUBLIC_DIR = path.join(ROOT, "public");
+const WEB_DIR = path.join(ROOT, "web");
 const CONTENT_DIR = path.join(ROOT, "content", "posts");
 const PORT = Number(process.env.PORT) || 4321;
 const HOST = "127.0.0.1";
+
+// 双击 .app 启动时 PATH 里不会有 Homebrew / bun 的目录，这里补齐
+const EXTRA_PATH = ["/opt/homebrew/bin", "/usr/local/bin", path.join(process.env.HOME || "", ".bun/bin")];
+const PATH_ENV = { ...process.env, PATH: [...EXTRA_PATH, process.env.PATH || "/usr/bin:/bin"].join(":") };
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
@@ -38,15 +53,25 @@ const MIME = {
   ".md": "text/markdown; charset=utf-8",
 };
 
+const PAGES = {
+  "/publish": "publish.html",
+  "/admin": "admin.html",
+};
+
+// ---------- 基础工具 ----------
+
 function sendJSON(res, status, obj) {
   const body = JSON.stringify(obj);
-  res.writeHead(status, { "Content-Type": "application/json; charset=utf-8" });
+  res.writeHead(status, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "no-store",
+  });
   res.end(body);
 }
 
-function readBody(req, limit = 2 * 1024 * 1024) {
+function readBody(req, limit = 16 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
-    let data = "";
+    const chunks = [];
     let size = 0;
     req.on("data", (chunk) => {
       size += chunk.length;
@@ -55,27 +80,54 @@ function readBody(req, limit = 2 * 1024 * 1024) {
         req.destroy();
         return;
       }
-      data += chunk;
+      chunks.push(chunk);
     });
-    req.on("end", () => resolve(data));
+    req.on("end", () => resolve(Buffer.concat(chunks)));
     req.on("error", reject);
   });
 }
 
-// 读取内容里所有分类：文件夹名 + frontmatter 中的 categories
+async function readJSON(req) {
+  const buf = await readBody(req);
+  if (!buf.length) return {};
+  try {
+    return JSON.parse(buf.toString("utf-8"));
+  } catch {
+    throw new Error("无效的 JSON 请求体");
+  }
+}
+
+function sanitizeFilename(name) {
+  const s = String(name)
+    .trim()
+    .replace(/[\/\\:*?"<>|]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return s || "untitled";
+}
+
+function nowLocal() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, "0");
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+08:00`
+  );
+}
+
+// ---------- 文章 ----------
+
 async function readCategories() {
   const cats = new Set();
   try {
     const top = await fsp.readdir(CONTENT_DIR, { withFileTypes: true });
-    for (const e of top) {
-      if (e.isDirectory()) cats.add(e.name);
-    }
+    for (const e of top) if (e.isDirectory()) cats.add(e.name);
   } catch {
     /* content/posts 可能不存在 */
   }
-  // 递归扫描 frontmatter
+
   async function walk(dir) {
-      let entries;
+    let entries;
     try {
       entries = await fsp.readdir(dir, { withFileTypes: true });
     } catch {
@@ -105,282 +157,267 @@ async function readCategories() {
   return [...cats].sort((a, b) => a.localeCompare(b, "zh"));
 }
 
-function sanitizeFilename(name) {
-  let s = name.trim().replace(/[\/\\:*?"<>|]/g, "").replace(/\s+/g, "-");
-  s = s.replace(/^-+|-+$/g, "");
-  return s || "untitled";
+async function createPost({ category, title, content, tags }) {
+  const slug = sanitizeFilename(title);
+  const dir = path.join(CONTENT_DIR, category);
+  await fsp.mkdir(dir, { recursive: true });
+
+  let file = path.join(dir, slug + ".md");
+  let n = 2;
+  for (;;) {
+    try {
+      await fsp.access(file);
+      file = path.join(dir, `${slug}-${n}.md`);
+      n++;
+    } catch {
+      break;
+    }
+  }
+
+  const tagList = (tags || [])
+    .map((t) => String(t).trim())
+    .filter(Boolean)
+    .map((t) => JSON.stringify(t))
+    .join(", ");
+
+  const fm =
+    `---\ntitle: ${JSON.stringify(title)}\n` +
+    `date: ${nowLocal()}\n` +
+    `categories: [${JSON.stringify(category)}]\n` +
+    (tagList ? `tags: [${tagList}]\n` : "") +
+    `draft: false\n---\n\n${String(content).replace(/\s+$/, "")}\n`;
+
+  await fsp.writeFile(file, fm, "utf-8");
+
+  const rel = path.relative(ROOT, file).split(path.sep).join("/");
+  const permalink =
+    "https://tianchoy.github.io/" +
+    path
+      .relative(path.join(ROOT, "content"), file)
+      .split(path.sep)
+      .join("/")
+      .replace(/\.md$/, "") +
+    "/";
+
+  return { file: rel, permalink, absFile: file };
 }
 
-function nowLocal() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  return (
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+08:00`
-  );
-}
+// ---------- 部署 ----------
 
-async function buildSiteAndDeploy() {
-  return new Promise((resolve, reject) => {
+function runDeploy() {
+  return new Promise((resolve) => {
+    const started = Date.now();
     const child = spawn("bash", ["deploy.sh"], {
       cwd: ROOT,
-      env: process.env,
+      env: PATH_ENV,
     });
     let out = "";
-    child.stdout.on("data", (d) => (out += d));
-    child.stderr.on("data", (d) => (out += d));
-    child.on("error", (e) => reject(e));
+    const push = (d) => {
+      out += d;
+      if (out.length > 200000) out = out.slice(-100000);
+    };
+    child.stdout.on("data", push);
+    child.stderr.on("data", push);
+    child.on("error", (e) => resolve({ ok: false, code: -1, output: out + "\n" + e.message, ms: Date.now() - started }));
     child.on("close", (code) =>
-      resolve({ code, output: out.slice(-4000) })
+      resolve({ ok: code === 0, code, output: out.slice(-8000), ms: Date.now() - started })
     );
   });
 }
 
-// ---------- 发布页 HTML ----------
-function publishPageHTML() {
-  return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>发布文章 · 特严赤傲</title>
-<style>
-  :root { --bg:#f7f8fa; --card:#fff; --border:#e3e6ea; --text:#222; --muted:#888; --primary:#2d7ff9; }
-  * { box-sizing: border-box; }
-  body { margin:0; font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
-         background:var(--bg); color:var(--text); }
-  .wrap { max-width:760px; margin:32px auto; padding:0 16px; }
-  .card { background:var(--card); border:1px solid var(--border); border-radius:12px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,.04); }
-  h1 { font-size:20px; margin:0 0 16px; }
-  label { display:block; font-size:13px; color:var(--muted); margin:14px 0 6px; }
-  input[type=text], select, textarea { width:100%; padding:10px 12px; border:1px solid var(--border);
-         border-radius:8px; font-size:14px; font-family:inherit; background:#fff; color:var(--text); }
-  textarea { min-height:320px; resize:vertical; font-family:"SFMono-Regular",Consolas,Menlo,monospace; line-height:1.6; }
-  .row { display:flex; gap:10px; align-items:flex-end; }
-  .row > div { flex:1; }
-  button { cursor:pointer; border:none; border-radius:8px; font-size:14px; padding:10px 18px; }
-  .btn-primary { background:var(--primary); color:#fff; }
-  .btn-primary:disabled { opacity:.6; cursor:not-allowed; }
-  .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
-  .status { margin-top:16px; padding:12px; border-radius:8px; font-size:13px; white-space:pre-wrap;
-            background:#f0f4ff; border:1px solid #d6e4ff; display:none; }
-  .status.ok { background:#eafaf0; border-color:#bfe9cf; }
-  .status.err { background:#fdeeee; border-color:#f3c9c9; }
-  .links { margin-top:10px; font-size:12px; }
-  .links a { color:var(--primary); text-decoration:none; margin-right:12px; }
-  .hint { font-size:12px; color:var(--muted); margin-top:4px; }
-</style>
-</head>
-<body>
-<div class="wrap">
-  <div class="card">
-    <h1>发布新文章</h1>
-    <div class="row">
-      <div>
-        <label>分类</label>
-        <select id="category"><option>加载中…</option></select>
-      </div>
-      <div>
-        <label>&nbsp;</label>
-        <button class="btn-ghost" id="refresh">刷新分类</button>
-      </div>
-    </div>
-    <div class="hint">分类读取自 content/posts 下的所有目录与文章 frontmatter。</div>
-
-    <label>标题</label>
-    <input type="text" id="title" placeholder="文章标题">
-
-    <label>内容（支持 Markdown）</label>
-    <textarea id="content" placeholder="# 小标题&#10;&#10;在这里写正文，支持 Markdown 语法…"></textarea>
-
-    <div style="margin-top:18px; display:flex; gap:10px;">
-      <button class="btn-primary" id="publish">发布</button>
-    </div>
-
-    <div class="status" id="status"></div>
-    <div class="links">
-      <a href="/" target="_blank">预览站点</a>
-      <a href="/posts/" target="_blank">文章列表</a>
-    </div>
-  </div>
-</div>
-<script>
-const $ = (id) => document.getElementById(id);
-async function loadCategories() {
-  const sel = $('category');
-  sel.innerHTML = '<option>加载中…</option>';
-  try {
-    const r = await fetch('/api/categories');
-    const data = await r.json();
-    sel.innerHTML = '';
-    if (!data.categories.length) {
-      sel.innerHTML = '<option value="">（暂无分类）</option>';
-    } else {
-      for (const c of data.categories) {
-        const o = document.createElement('option');
-        o.value = c; o.textContent = c; sel.appendChild(o);
-      }
-    }
-  } catch (e) {
-    sel.innerHTML = '<option>读取失败</option>';
-  }
-}
-function setStatus(msg, kind) {
-  const s = $('status');
-  s.style.display = 'block';
-  s.className = 'status' + (kind ? ' ' + kind : '');
-  s.textContent = msg;
-}
-$('refresh').onclick = loadCategories;
-$('publish').onclick = async () => {
-  const category = $('category').value;
-  const title = $('title').value.trim();
-  const content = $('content').value;
-  if (!title) { setStatus('请填写标题', 'err'); return; }
-  if (!content.trim()) { setStatus('请填写内容', 'err'); return; }
-  const btn = $('publish');
-  btn.disabled = true;
-  setStatus('正在生成文章并运行 deploy.sh 推送 git，请稍候（约 30 秒）…');
-  try {
-    const r = await fetch('/api/publish', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category, title, content }),
-    });
-    const data = await r.json();
-    if (r.ok && data.ok) {
-      setStatus('✅ 发布成功！\\n文件：' + data.file + '\\n线上：' + data.permalink + '\\n\\n' + data.deploy, 'ok');
-    } else {
-      setStatus('❌ 失败：' + (data.error || '未知错误') + '\\n\\n' + (data.deploy || ''), 'err');
-    }
-  } catch (e) {
-    setStatus('❌ 请求出错：' + e.message, 'err');
-  } finally {
-    btn.disabled = false;
-  }
-};
-loadCategories();
-</script>
-</body>
-</html>`;
+async function deployOrSkip(skip) {
+  if (skip) return { ok: true, code: 0, skipped: true, output: "(已跳过部署，仅在本地生成文件)", ms: 0 };
+  return runDeploy();
 }
 
-// ---------- 静态文件服务 ----------
-async function serveStatic(req, res, urlPath) {
-  let rel = decodeURIComponent(urlPath.split("?")[0]);
-  if (rel === "/" || rel === "") rel = "/index.html";
-  const filePath = path.normalize(path.join(PUBLIC_DIR, rel));
-  if (!filePath.startsWith(PUBLIC_DIR)) {
-    res.writeHead(403);
-    return res.end("Forbidden");
-  }
-  try {
-    const stat = await fsp.stat(filePath);
-    let target = filePath;
-    if (stat.isDirectory()) {
-      target = path.join(filePath, "index.html");
-    }
-    await fsp.access(target);
-    pipeFile(res, target);
-  } catch {
-    res.writeHead(404);
-    res.end("Not Found");
-  }
-}
+// ---------- 静态文件 ----------
 
-function pipeFile(res, filePath) {
+function sendFile(res, filePath, cache = "no-store") {
   const ext = path.extname(filePath).toLowerCase();
-  res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
-  const s = nodeFs.createReadStream(filePath);
-  s.on("error", () => {
-    try {
+  const stream = nodeFs.createReadStream(filePath);
+  stream.on("open", () => {
+    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": cache });
+  });
+  stream.on("error", () => {
+    if (!res.headersSent) {
+      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("Not Found");
+    } else {
       res.destroy();
-    } catch {
-      /* ignore */
     }
   });
-  s.pipe(res);
+  stream.pipe(res);
 }
 
-const server = http.createServer(async (req, res) => {
-  const urlPath = req.url || "/";
+async function resolveFile(baseDir, relPath) {
+  const clean = decodeURIComponent(relPath);
+  const target = path.normalize(path.join(baseDir, clean));
+  if (!target.startsWith(baseDir)) return null;
   try {
-    if (urlPath === "/publish" || urlPath.startsWith("/publish?")) {
-      res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-      return res.end(publishPageHTML());
+    const stat = await fsp.stat(target);
+    if (stat.isDirectory()) {
+      const idx = path.join(target, "index.html");
+      await fsp.access(idx);
+      return idx;
     }
-    if (urlPath === "/api/categories") {
-      const cats = await readCategories();
-      return sendJSON(res, 200, { categories: cats });
-    }
-    if (urlPath === "/api/publish" && req.method === "POST") {
-      const raw = await readBody(req);
-      let payload;
-      try {
-        payload = JSON.parse(raw);
-      } catch {
-        return sendJSON(res, 400, { ok: false, error: "无效的 JSON" });
-      }
-      const { category, title, content } = payload || {};
-      if (!category || !title || !content) {
-        return sendJSON(res, 400, { ok: false, error: "分类、标题、内容均为必填" });
-      }
-      const slug = sanitizeFilename(title);
-      const dir = path.join(CONTENT_DIR, category);
-      await fsp.mkdir(dir, { recursive: true });
-      let file = path.join(dir, slug + ".md");
-      let n = 2;
-      while (true) {
-        try {
-          await fsp.access(file);
-          file = path.join(dir, `${slug}-${n}.md`);
-          n++;
-        } catch {
-          break;
-        }
-      }
-      const fm =
-        `---\ntitle: ${JSON.stringify(title)}\n` +
-        `date: ${nowLocal()}\n` +
-        `categories: ["${category}"]\ndraft: false\n---\n\n${content}\n`;
-      await fsp.writeFile(file, fm, "utf-8");
+    return target;
+  } catch {
+    return null;
+  }
+}
 
-      const rel = path.relative(ROOT, file).split(path.sep).join("/");
-      const contentRoot = path.join(ROOT, "content");
-      const permalink =
-        "https://tianchoy.github.io/" +
-        path
-          .relative(contentRoot, file)
-          .replace(/\\/g, "/")
-          .replace(/\.md$/, "") +
-        "/";
-      const deploy =
-        process.env.SKIP_DEPLOY === "1"
-          ? { code: 0, output: "(deploy 已跳过：SKIP_DEPLOY=1)" }
-          : await buildSiteAndDeploy();
-      if (deploy.code !== 0) {
-        return sendJSON(res, 500, {
-          ok: false,
-          error: "deploy.sh 返回非零退出码 " + deploy.code,
-          file: rel,
-          permalink,
-          deploy: deploy.output,
-        });
+// ---------- 路由 ----------
+
+const server = http.createServer(async (req, res) => {
+  let url;
+  try {
+    url = new URL(req.url || "/", `http://${HOST}:${PORT}`);
+  } catch {
+    res.writeHead(400);
+    return res.end("Bad Request");
+  }
+  const pathname = url.pathname;
+
+  try {
+    // —— 页面
+    if (PAGES[pathname]) {
+      const file = path.join(WEB_DIR, PAGES[pathname]);
+      return sendFile(res, file);
+    }
+
+    if (pathname === "/" || pathname === "") {
+      const index = path.join(PUBLIC_DIR, "index.html");
+      try {
+        await fsp.access(index);
+        return sendFile(res, index, "no-cache");
+      } catch {
+        res.writeHead(302, { Location: "/publish" });
+        return res.end();
       }
-      return sendJSON(res, 200, {
-        ok: true,
-        file: rel,
-        permalink,
-        deploy: deploy.output,
+    }
+
+    // —— UI 资源
+    if (pathname.startsWith("/ui/")) {
+      const file = await resolveFile(WEB_DIR, pathname.slice("/ui/".length));
+      if (!file) {
+        res.writeHead(404);
+        return res.end("Not Found");
+      }
+      return sendFile(res, file);
+    }
+
+    // —— 静态图片：优先读 static/，让刚换的头像不用等构建就能预览
+    if (pathname.startsWith("/images/")) {
+      const rel = pathname.slice("/images/".length);
+      const fromStatic = await resolveFile(path.join(ROOT, "static", "images"), rel);
+      if (fromStatic) return sendFile(res, fromStatic, "no-cache");
+      const fromPublic = await resolveFile(path.join(PUBLIC_DIR, "images"), rel);
+      if (fromPublic) return sendFile(res, fromPublic, "no-cache");
+      res.writeHead(404);
+      return res.end("Not Found");
+    }
+
+    // —— API
+    if (pathname === "/api/ping") {
+      return sendJSON(res, 200, { ok: true, app: "写作台", root: ROOT, port: PORT, pid: process.pid });
+    }
+
+    if (pathname === "/api/categories") {
+      return sendJSON(res, 200, { ok: true, categories: await readCategories() });
+    }
+
+    if (pathname === "/api/site" && req.method === "GET") {
+      const { site, social, catalog } = await readSiteSettings();
+      return sendJSON(res, 200, { ok: true, site, social, catalog });
+    }
+
+    if (pathname === "/api/site" && req.method === "POST") {
+      const payload = await readJSON(req);
+      if (!String(payload.siteTitle || "").trim()) {
+        return sendJSON(res, 400, { ok: false, error: "站点名称不能为空" });
+      }
+      const result = await saveSiteSettings(payload);
+      const deploy = await deployOrSkip(!payload.deploy);
+      return sendJSON(res, deploy.ok ? 200 : 500, {
+        ok: deploy.ok,
+        site: result.site,
+        social: result.social,
+        error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
+        deploy,
       });
     }
-    // 其余当作站点静态资源
-    return serveStatic(req, res, urlPath);
+
+    if (pathname === "/api/avatar" && req.method === "POST") {
+      const type = req.headers["content-type"] || "";
+      if (!avatarExtFor(type)) {
+        return sendJSON(res, 400, { ok: false, error: "只支持 JPG / PNG / WebP / GIF" });
+      }
+      const buf = await readBody(req, 13 * 1024 * 1024);
+      const { avatarURL, file } = await saveAvatarFile(buf, type);
+      return sendJSON(res, 200, { ok: true, avatarURL, file });
+    }
+
+    if (pathname === "/api/publish" && req.method === "POST") {
+      const payload = await readJSON(req);
+      const category = String(payload.category || "").trim();
+      const title = String(payload.title || "").trim();
+      const content = String(payload.content || "");
+      if (!category || !title) return sendJSON(res, 400, { ok: false, error: "分类和标题必填" });
+      if (!content.trim()) return sendJSON(res, 400, { ok: false, error: "正文不能为空" });
+
+      const created = await createPost({
+        category,
+        title,
+        content,
+        tags: Array.isArray(payload.tags) ? payload.tags : [],
+      });
+      const deploy = await deployOrSkip(Boolean(payload.dryRun));
+      return sendJSON(res, deploy.ok ? 200 : 500, {
+        ok: deploy.ok,
+        file: created.file,
+        permalink: created.permalink,
+        error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
+        deploy,
+      });
+    }
+
+    if (pathname === "/api/deploy" && req.method === "POST") {
+      const deploy = await runDeploy();
+      return sendJSON(res, deploy.ok ? 200 : 500, {
+        ok: deploy.ok,
+        error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
+        deploy,
+      });
+    }
+
+    if (pathname === "/api/shutdown" && req.method === "POST") {
+      sendJSON(res, 200, { ok: true });
+      setTimeout(() => process.exit(0), 120);
+      return;
+    }
+
+    // —— 其余按构建产物预览
+    const file = await resolveFile(PUBLIC_DIR, pathname.replace(/^\//, ""));
+    if (file) return sendFile(res, file, "no-cache");
+
+    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+    res.end("Not Found");
   } catch (e) {
-    return sendJSON(res, 500, { ok: false, error: String(e && e.message || e) });
+    const msg = String((e && e.message) || e);
+    if (!res.headersSent) sendJSON(res, 500, { ok: false, error: msg });
+    else {
+      try {
+        res.destroy();
+      } catch {
+        /* ignore */
+      }
+    }
   }
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`发布服务已启动： http://${HOST}:${PORT}/publish`);
+  console.log(`写作台已启动 → http://${HOST}:${PORT}/publish`);
 });
+
+process.on("SIGTERM", () => process.exit(0));
+process.on("SIGINT", () => process.exit(0));

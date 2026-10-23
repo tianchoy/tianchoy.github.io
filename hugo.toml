@@ -90,7 +90,7 @@ summaryLength = 30
       gravatarEmail = ""
       avatarURL = "/images/profile.jpg"
       title = "特严赤傲"
-      subtitle = "乙火"
+      subtitle = "热爱祖国、前端程序员、爱好摄影以及生活记录者。"
       typeit = false
       social = true
     [params.home.posts]

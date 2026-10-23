@@ -7,7 +7,8 @@
 - 头像：`static/images/profile.jpg`（用户 me.jpg，150×150），`avatarURL = "/images/profile.jpg"`（**必须绝对路径**，否则 /about/ 下相对解析会破图）。关于页头图复用 `home/profile.html`，CSS 里圆形头像 + 隐藏 home-title/home-subtitle。
 - 部署：`bash deploy.sh` = 本地 `hugo` 构建校验 + `git add/commit` + `git push origin main`（Actions 自动上线）。无需再手动推 public。
 - 访问量统计：页脚「本站总访问量/访客数/本页阅读量」，用不蒜子 Busuanzi，靠 `[params.footer] custom`（hugo.toml）注入 script + span，未改主题模板。
-- 站内一键发布：`publish-server.mjs`（Node 零依赖，绑 127.0.0.1:4321）。`node publish-server.mjs`（或 `npm run publish`）后访问 `/publish`：标题+内容+分类下拉（读 content/posts 全部分类）+发布按钮；点发布 → 在 `content/posts/<分类>/<标题>.md` 写带 frontmatter 文章 → 调 `bash deploy.sh`（推源码 → Actions 发布）。测试可加 `SKIP_DEPLOY=1` 跳过部署。
+- 写作台（本地发布）：双击根目录 **`写作台.app`**（macOS shell-script bundle，launcher 里补 `/opt/homebrew/bin`、`~/.bun/bin` 到 PATH，因为 Finder 启动不带这些）→ 已有服务就直接开浏览器，没有就 `bun`（缺则 node）后台起 `publish-server.mjs`（绑 127.0.0.1:4321）。页面 `/publish` 写文章、`/admin` 站点设置、`/` 预览构建产物。服务端 `publish-server.mjs` + `lib/site-config.mjs`（hugo.toml 定点改写：按段名+键替换，不整体 parse，保证注释与顺序不丢；站点名同时写 title/params.title/header.name/home.profile.title）+ `web/`（publish/admin/ui.css/ui.js，经 `/ui/*` 提供）。头像 `POST /api/avatar` 写 `static/images/profile.<ext>`（sips 仅 >512px 才缩，URL 带 `?v=`）。测试可 `SKIP_DEPLOY=1` 或发布页勾「仅存本地」。日志 `.writing-desk.log`（已忽略）。
+- **git remote 用 SSH**（`git@github.com:tianchoy/tianchoy.github.io.git`）：HTTPS 走代理会 502，`deploy.sh` 的 `git push origin main` 必须走 SSH，否则界面发布必失败。
 - 本地 Hugo 二进制：`/opt/homebrew/bin/hugo`（v0.168.0 extended，必须 extended 才能编译主题 SCSS）。brew 因沙箱/TCC 装不上，二进制为手动下载安装。
 - 文章 frontmatter 约定：title / date / categories / draft（tags 字段保留但未启用标签页）。
 - 自定义样式统一在 `assets/css/_custom.scss`（KeepIt `style.scss` 末尾 `@import "_custom"`），不直接改主题。列表标题 .95rem、详情正文 .92rem、`.archive-item` 加间距、`.post-info` 让「更新于」与分享图标同行左右分列。

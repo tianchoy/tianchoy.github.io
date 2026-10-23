@@ -57,10 +57,10 @@ summaryLength = 30
   # 页脚数字由 layouts/partials/stats.html 按这里的分支注入；none 时不输出任何脚本
   # 不蒜子（busuanzi）仅作兜底：同一域名会返回数量级不同的数据，不建议再用
   [params.analytics]
-    provider = "none"
+    provider = "goatcounter"
     [params.analytics.goatcounter]
       # 注册后拿到子域名填这里，例如 tianchoy → https://tianchoy.goatcounter.com
-      site = ""
+      site = "tianchao"
       # 页脚显示「本站浏览 / 本页阅读量」，需要后台勾选 Allow adding visitor counts on your website
       counters = true
     [params.analytics.umami]

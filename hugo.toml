@@ -53,22 +53,30 @@ summaryLength = 30
     [params.header.title]
       name = "特严赤傲"
 
+  # 访问统计：provider 可选 none / goatcounter / umami / ga4 / cloudflare / busuanzi
+  # 页脚数字由 layouts/partials/stats.html 按这里的分支注入；none 时不输出任何脚本
+  # 不蒜子（busuanzi）仅作兜底：同一域名会返回数量级不同的数据，不建议再用
+  [params.analytics]
+    provider = "none"
+    [params.analytics.goatcounter]
+      # 注册后拿到子域名填这里，例如 tianchoy → https://tianchoy.goatcounter.com
+      site = ""
+      # 页脚显示「本站浏览 / 本页阅读量」，需要后台勾选 Allow adding visitor counts on your website
+      counters = true
+    [params.analytics.umami]
+      script = "https://cloud.umami.is/script.js"
+      websiteId = ""
+    [params.analytics.ga4]
+      measurementId = ""
+    [params.analytics.cloudflare]
+      token = ""
+
   [params.footer]
     enable = true
     hugo = true
     copyright = true
     author = true
     since = 2022
-    custom = """
-<div class="busuanzi-stats">
-  <span id="busuanzi_container_site_pv">本站总访问量 <span id="busuanzi_value_site_pv">-</span> 次</span>
-  <span class="busuanzi-sep">·</span>
-  <span id="busuanzi_container_site_uv">访客数 <span id="busuanzi_value_site_uv">-</span> 人</span>
-  <span class="busuanzi-sep">·</span>
-  <span id="busuanzi_container_page_pv">本页阅读量 <span id="busuanzi_value_page_pv">-</span> 次</span>
-</div>
-<script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-"""
 
   [params.section]
     paginate = 20

@@ -535,3 +535,97 @@ select { appearance: none; background-image: none; cursor: pointer; }
   .action-bar .btn { flex: 1; justify-content: center; }
   .page { padding-bottom: 32px; }
 }
+
+/* ---------- 文章管理 ---------- */
+
+.page.wide { max-width: 1160px; }
+
+.filter-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.filter-bar .search { flex: 1 1 240px; min-width: 150px; }
+.filter-bar select { width: auto; min-width: 118px; }
+.filter-bar .count { font-size: 12px; color: var(--text-3); white-space: nowrap; margin-left: auto; }
+
+.table-wrap { overflow-x: auto; }
+.post-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.post-table th {
+  text-align: left; font-weight: 500; font-size: 11px; letter-spacing: 0.05em;
+  color: var(--text-3); padding: 9px 12px; white-space: nowrap;
+  border-bottom: 1px solid var(--border); background: var(--surface-2);
+}
+.post-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.post-table tbody tr:last-child td { border-bottom: none; }
+.post-table tbody tr:hover { background: var(--surface-2); }
+.post-table tbody tr.is-picked { background: var(--accent-weak); }
+.post-table .col-check { width: 36px; }
+.post-table input[type="checkbox"] {
+  width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; margin: 0; display: block;
+}
+.post-table .t-title { max-width: 430px; }
+.post-table .t-title a {
+  color: var(--text); text-decoration: none; display: block;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.5;
+}
+.post-table .t-title a:hover { color: var(--accent-text); }
+.post-table .t-title .num { display: block; margin-top: 3px; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.post-table .num { color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 12.5px; }
+.post-table .t-act { text-align: right; white-space: nowrap; }
+
+.badge-draft {
+  display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px;
+  font-size: 10.5px; line-height: 16px; background: var(--warn-weak); color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 26%, transparent); vertical-align: 1px;
+}
+
+.sel-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  background: var(--accent-weak); color: var(--accent-text); font-size: 12.5px;
+}
+.sel-bar .spacer { margin-left: auto; }
+
+@media (max-width: 820px) {
+  .post-table .col-words, .post-table .col-size { display: none; }
+  .post-table .t-title { max-width: 220px; }
+}
+
+/* ---------- 访问统计说明 ---------- */
+
+.an-note {
+  margin-top: 14px;
+  padding: 11px 13px;
+  border-radius: 10px;
+  background: var(--surface-3);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--text-2);
+}
+.an-note:empty { display: none; }
+.an-note a { color: var(--accent-text); }
+.an-note code {
+  font-family: var(--mono); font-size: 11.5px;
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+  padding: 1px 5px; border-radius: 4px;
+}
+
+/* 窄屏：先收掉日期，再收掉分类，保证「删除」按钮始终可见 */
+@media (max-width: 900px) {
+  .post-table .col-date { display: none; }
+}
+@media (max-width: 560px) {
+  .post-table .col-cat { display: none; }
+  .post-table { font-size: 12.5px; }
+  .post-table th, .post-table td { padding: 9px 8px; }
+  .post-table .t-title { max-width: 50vw; }
+}
+
+/* 顶栏：4 个导航项在窄屏不再换行 */
+.nav-link { white-space: nowrap; }
+@media (max-width: 640px) {
+  .brand-text { display: none; }
+  .nav { gap: 2px; }
+  .nav-link { padding: 6px 7px; font-size: 12.5px; }
+}

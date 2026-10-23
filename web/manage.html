@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>文章管理 · 写作台</title>
+<link rel="stylesheet" href="/ui/ui.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/publish">
+      <span class="brand-mark">写</span>
+      <span class="brand-text">写作台<em>特严赤傲</em></span>
+    </a>
+    <nav class="nav">
+      <a class="nav-link" data-page="publish" href="/publish">写文章</a>
+      <a class="nav-link" data-page="manage" href="/manage">文章管理</a>
+      <a class="nav-link" data-page="admin" href="/admin">站点设置</a>
+      <a class="nav-link" href="/" target="_blank">预览站点 ↗</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="status-chip">本地服务运行中</span>
+      <button class="btn btn-ghost btn-sm" id="btnShutdown">关闭服务</button>
+    </div>
+  </div>
+</header>
+
+<main class="page wide">
+  <div class="page-head">
+    <h1>文章管理</h1>
+    <p>列出 <code style="font-family:var(--mono)">content/posts</code> 下的全部文章。删除会直接移除 Markdown 文件，可选顺手发布。</p>
+  </div>
+
+  <div id="result"></div>
+
+  <section class="card">
+    <div class="filter-bar">
+      <div class="search">
+        <input type="text" id="q" placeholder="搜索标题、分类、标签或路径…" autocomplete="off">
+      </div>
+      <select id="cat"><option value="">全部分类</option></select>
+      <select id="status">
+        <option value="">全部状态</option>
+        <option value="published">仅已发布</option>
+        <option value="draft">仅草稿</option>
+      </select>
+      <span class="count" id="count">加载中…</span>
+      <button class="btn btn-ghost btn-sm" id="btnReload">刷新</button>
+    </div>
+
+    <div class="sel-bar" id="selBar" hidden>
+      <span id="selText"></span>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost btn-sm" id="btnClearSel">取消选择</button>
+      <button class="btn btn-danger btn-sm" id="btnDeleteSel">删除选中</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th class="col-check"><input type="checkbox" id="checkAll" title="全选当前结果"></th>
+            <th>标题</th>
+            <th class="col-cat">分类</th>
+            <th class="col-date">日期</th>
+            <th class="col-words">字数</th>
+            <th class="col-size">大小</th>
+            <th class="t-act">操作</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="7" class="num" style="text-align:center;padding:26px;">加载中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="action-bar">
+    <label class="switch" title="删除后自动执行 deploy.sh，把站点更新上去">
+      <input type="checkbox" id="autoDeploy" checked>删除后立即发布
+    </label>
+    <span class="hint" id="footHint"></span>
+    <span class="spacer"></span>
+    <button class="btn btn-ghost" id="btnDeploy">发布当前改动</button>
+  </div>
+</main>
+
+<script src="/ui/ui.js"></script>
+<script>
+(function () {
+  const { api, toast, esc, initTopbar } = window.WB;
+  initTopbar();
+
+  const $ = (id) => document.getElementById(id);
+  const rowsEl = $('rows');
+  const qEl = $('q');
+  const catEl = $('cat');
+  const statusEl = $('status');
+  const countEl = $('count');
+  const resultEl = $('result');
+  const selBar = $('selBar');
+  const selText = $('selText');
+  const checkAll = $('checkAll');
+  const footHint = $('footHint');
+
+  let posts = [];
+  let stats = { total: 0, drafts: 0, words: 0 };
+  let picked = new Set();
+  let busy = false;
+
+  const fmtSize = (n) => (n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB');
+  const fmtWords = (n) => (n >= 10000 ? (n / 10000).toFixed(1) + ' 万' : String(n));
+
+  /* ---------- 过滤 ---------- */
+
+  function visible() {
+    const q = qEl.value.trim().toLowerCase();
+    const cat = catEl.value;
+    const st = statusEl.value;
+    return posts.filter((p) => {
+      if (cat && !p.categories.some((c) => c === cat)) return false;
+      if (st === 'draft' && !p.draft) return false;
+      if (st === 'published' && p.draft) return false;
+      if (!q) return true;
+      const hay = [p.title, p.file, ...p.categories, ...p.tags].join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  }
+
+  /* ---------- 渲染 ---------- */
+
+  function render() {
+    const list = visible();
+    // 选中项若已被过滤掉，保留在集合里但界面上不可见，容易误删——这里直接收敛
+    const visibleFiles = new Set(list.map((p) => p.file));
+    for (const f of [...picked]) if (!visibleFiles.has(f)) picked.delete(f);
+
+    if (!list.length) {
+      rowsEl.innerHTML = posts.length
+        ? `<tr><td colspan="7" class="num" style="text-align:center;padding:26px;">没有匹配的文章</td></tr>`
+        : `<tr><td colspan="7" class="num" style="text-align:center;padding:26px;">content/posts 里还没有文章</td></tr>`;
+    } else {
+      rowsEl.innerHTML = list
+        .map((p, i) => {
+          const cats = p.categories.length
+            ? p.categories.map((c) => `<span class="chip chip-accent">${esc(c)}</span>`).join(' ')
+            : '<span class="num">—</span>';
+          const tags = p.tags.length ? `  #${esc(p.tags.slice(0, 2).join(' #'))}` : '';
+          return `<tr data-file="${esc(p.file)}" class="${picked.has(p.file) ? 'is-picked' : ''}">
+            <td class="col-check"><input type="checkbox" data-pick="${i}" ${picked.has(p.file) ? 'checked' : ''}></td>
+            <td class="t-title">
+              <a href="${esc(p.permalink)}" target="_blank" rel="noopener" title="${esc(p.file)}">${esc(p.title)}</a>
+              <span class="num">${esc(p.file.replace(/^content\/posts\//, ''))}${tags}</span>${p.draft ? '<span class="badge-draft">草稿</span>' : ''}
+            </td>
+            <td class="col-cat">${cats}</td>
+            <td class="num col-date">${esc(p.date)}</td>
+            <td class="num col-words">${fmtWords(p.words)}</td>
+            <td class="num col-size">${fmtSize(p.size)}</td>
+            <td class="t-act"><button class="btn btn-danger btn-sm" data-del="${i}">删除</button></td>
+          </tr>`;
+        })
+        .join('');
+    }
+
+    countEl.textContent = `共 ${list.length} 篇${list.length !== posts.length ? ` / ${posts.length}` : ''}`;
+
+    const totalPicked = picked.size;
+    selBar.hidden = totalPicked === 0;
+    selText.textContent = `已选 ${totalPicked} 篇`;
+    checkAll.checked = list.length > 0 && list.every((p) => picked.has(p.file));
+    checkAll.indeterminate = !checkAll.checked && list.some((p) => picked.has(p.file));
+
+    const drafts = stats.drafts ? `${stats.drafts} 篇草稿` : '无草稿';
+    footHint.textContent = `共 ${stats.total} 篇 · ${drafts} · 约 ${fmtWords(stats.words)} 字`;
+  }
+
+  function syncRow(file) {
+    const tr = rowsEl.querySelector(`tr[data-file="${CSS.escape(file)}"]`);
+    if (tr) tr.classList.toggle('is-picked', picked.has(file));
+  }
+
+  /* ---------- 交互 ---------- */
+
+  rowsEl.addEventListener('click', (e) => {
+    const del = e.target.closest('[data-del]');
+    if (del) {
+      const p = visible()[Number(del.dataset.del)];
+      if (p) removeOne(p);
+      return;
+    }
+    const box = e.target.closest('[data-pick]');
+    if (box) {
+      const p = visible()[Number(box.dataset.pick)];
+      if (!p) return;
+      if (box.checked) picked.add(p.file);
+      else picked.delete(p.file);
+      syncRow(p.file);
+      render();
+    }
+  });
+
+  checkAll.addEventListener('change', () => {
+    const list = visible();
+    if (checkAll.checked) list.forEach((p) => picked.add(p.file));
+    else list.forEach((p) => picked.delete(p.file));
+    render();
+  });
+
+  [qEl, catEl, statusEl].forEach((el) => el.addEventListener('input', render));
+
+  $('btnClearSel').addEventListener('click', () => { picked.clear(); render(); });
+  $('btnReload').addEventListener('click', () => load());
+
+  /* ---------- 删除 ---------- */
+
+  function renderResult(kind, head, lines, deploy) {
+    const log = deploy && deploy.output
+      ? `<details><summary class="hint" style="cursor:pointer;margin-top:8px;">部署日志（${deploy.ms || 0} ms）</summary><pre>${esc(deploy.output)}</pre></details>`
+      : '';
+    resultEl.innerHTML = `<div class="result ${kind}">
+        <div class="result-head">${head}</div>
+        ${lines.map((l) => `<div class="result-line">${esc(l)}</div>`).join('')}
+        ${log}
+      </div>`;
+    resultEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  async function removeOne(post) {
+    const ok = confirm(
+      `删除《${post.title}》？\n\n文件：${post.file}\n\n文件会被直接移出仓库，操作不可撤销（可用 git 找回）。`
+    );
+    if (!ok) return;
+    await doDelete([post.file]);
+  }
+
+  $('btnDeleteSel').addEventListener('click', async () => {
+    const files = [...picked];
+    if (!files.length) return;
+    const list = posts.filter((p) => files.includes(p.file));
+    const names = list.slice(0, 5).map((p) => `· ${p.title}`).join('\n');
+    const more = list.length > 5 ? `\n…等 ${list.length} 篇` : '';
+    if (!confirm(`删除选中的 ${files.length} 篇文章？\n\n${names}${more}\n\n操作不可撤销（可用 git 找回）。`)) return;
+    await doDelete(files);
+  });
+
+  async function doDelete(files) {
+    if (busy) return;
+    busy = true;
+    const btns = [$('btnDeleteSel'), $('btnDeploy')];
+    btns.forEach((b) => (b.disabled = true));
+    try {
+      const data = await api('/api/posts/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files, deploy: $('autoDeploy').checked }),
+      });
+      picked.clear();
+      await load();
+      const deploy = data.deploy || {};
+      renderResult(
+        'ok',
+        `✅ 已删除 ${data.deleted.length} 篇`,
+        [deploy.skipped ? '只删了本地文件，站点还没更新——点右下角「发布当前改动」即可上线。' : '已推送仓库，GitHub Actions 构建中（约 30～60 秒）'],
+        deploy
+      );
+      toast(`已删除 ${data.deleted.length} 篇`);
+    } catch (e) {
+      await load();
+      const d = e.payload || {};
+      if (d.deleted) {
+        renderResult('err', '⚠️ 文件已删除，但发布失败', [d.error || e.message], d.deploy);
+      } else {
+        renderResult('err', '❌ 删除失败', [e.message]);
+      }
+      toast('删除失败：' + e.message, 'err', 4200);
+    } finally {
+      busy = false;
+      btns.forEach((b) => (b.disabled = false));
+    }
+  }
+
+  $('btnDeploy').addEventListener('click', async () => {
+    if (busy) return;
+    if (!confirm('把当前本地改动（含已删除的文章）推送到站点？')) return;
+    busy = true;
+    $('btnDeploy').disabled = true;
+    try {
+      const data = await api('/api/deploy', { method: 'POST' });
+      renderResult('ok', '✅ 已发布', ['GitHub Actions 构建中，约 30～60 秒后线上生效。'], data.deploy);
+      toast('已发布');
+    } catch (e) {
+      renderResult('err', '❌ 发布失败', [e.message], (e.payload || {}).deploy);
+      toast('发布失败：' + e.message, 'err', 4200);
+    } finally {
+      busy = false;
+      $('btnDeploy').disabled = false;
+    }
+  });
+
+  /* ---------- 加载 ---------- */
+
+  function fillCategories() {
+    const cats = [...new Set(posts.flatMap((p) => p.categories))].sort((a, b) => a.localeCompare(b, 'zh'));
+    const keep = catEl.value;
+    catEl.innerHTML = '<option value="">全部分类</option>';
+    for (const c of cats) {
+      const o = document.createElement('option');
+      o.value = c;
+      o.textContent = c;
+      catEl.appendChild(o);
+    }
+    if (cats.includes(keep)) catEl.value = keep;
+  }
+
+  async function load() {
+    try {
+      const data = await api('/api/posts');
+      posts = data.posts || [];
+      stats = data.stats || { total: posts.length, drafts: 0, words: 0 };
+      fillCategories();
+      render();
+    } catch (e) {
+      countEl.textContent = '读取失败';
+      rowsEl.innerHTML = `<tr><td colspan="7" class="num" style="text-align:center;padding:26px;">${esc(e.message)}</td></tr>`;
+      toast('读取文章列表失败：' + e.message, 'err', 4200);
+    }
+  }
+
+  // 先渲染一版壳，再拉数据
+  render();
+  load();
+})();
+</script>
+</body>
+</html>

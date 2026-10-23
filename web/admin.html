@@ -17,6 +17,7 @@
     </a>
     <nav class="nav">
       <a class="nav-link" data-page="publish" href="/publish">写文章</a>
+      <a class="nav-link" data-page="manage" href="/manage">文章管理</a>
       <a class="nav-link" data-page="admin" href="/admin">站点设置</a>
       <a class="nav-link" href="/" target="_blank">预览站点 ↗</a>
     </nav>
@@ -112,7 +113,61 @@
           <input id="newSocialValue" type="text" placeholder="账号名或完整链接，例如 tianchoy" autocomplete="off">
           <button class="btn btn-soft" id="btnAddSocial">添加</button>
         </div>
-        <div class="hint" style="margin-top:8px;">值可以填账号名（按平台前缀拼成链接），也可以直接填 <code>https://…</code> 完整地址；留空即移除。</div>
+        <div class="hint" style="margin-top:8px;">值可以填账号名（按平台前缀拼成链接），也可以直接填 <code>https://…</code> 完整地址。同名平台已合并（YouTube 的 user/c/channel 三种只留一项）；留空即移除。</div>
+      </div>
+    </section>
+
+    <!-- 访问统计 -->
+    <section class="card">
+      <div class="card-head">
+        <span class="card-title">访问统计</span>
+        <span class="hint">决定页脚显示什么，以及后台报表用哪家</span>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="field">
+            <label for="anProvider">统计服务</label>
+            <select id="anProvider">
+              <option value="none">不启用（页脚不输出任何脚本）</option>
+              <option value="goatcounter">GoatCounter · 可显示页脚数字</option>
+              <option value="umami">Umami · 报表最完整</option>
+              <option value="ga4">Google Analytics 4</option>
+              <option value="cloudflare">Cloudflare Web Analytics</option>
+              <option value="busuanzi">不蒜子（旧方案，数据不可信）</option>
+            </select>
+          </div>
+
+          <div class="field" data-an="goatcounter" hidden>
+            <label for="gcSite">GoatCounter 子域名</label>
+            <input id="gcSite" type="text" placeholder="例如 tianchoy" autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="field" data-an="umami" hidden>
+            <label for="umamiId">Umami Website ID</label>
+            <input id="umamiId" type="text" placeholder="xxxxxxxx-xxxx-xxxx" autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="field" data-an="umami" hidden>
+            <label for="umamiScript">Umami 脚本地址（自建时改成自己的域名）</label>
+            <input id="umamiScript" type="text" placeholder="https://cloud.umami.is/script.js" autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="field" data-an="ga4" hidden>
+            <label for="ga4Id">GA4 衡量 ID</label>
+            <input id="ga4Id" type="text" placeholder="G-XXXXXXXXXX" autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="field" data-an="cloudflare" hidden>
+            <label for="cfToken">Cloudflare Web Analytics Token</label>
+            <input id="cfToken" type="text" placeholder="beacon token" autocomplete="off" spellcheck="false">
+          </div>
+
+          <div class="field full" data-an="goatcounter" hidden>
+            <label class="switch"><input type="checkbox" id="gcCounters">在页脚显示「本站浏览 / 本页阅读量」</label>
+          </div>
+        </div>
+
+        <div class="an-note" id="anNote"></div>
       </div>
     </section>
   </div>
@@ -189,6 +244,17 @@
     pendingAvatar = null;
 
     social = (data.social || []).map((s) => ({ key: s.key, value: s.value }));
+
+    const an = data.analytics || {};
+    anProvider.value = an.provider || 'none';
+    gcSite.value = an.goatcounterSite || '';
+    gcCounters.checked = an.goatcounterCounters !== false;
+    umamiId.value = an.umamiWebsiteId || '';
+    umamiScript.value = an.umamiScript || 'https://cloud.umami.is/script.js';
+    ga4Id.value = an.ga4MeasurementId || '';
+    cfToken.value = an.cloudflareToken || '';
+    syncAnFields();
+
     renderSocial();
     fillAddOptions();
     updateProfilePreview();
@@ -208,7 +274,14 @@
   /* ---------- 社交列表 ---------- */
 
   function meta(key) {
-    return catalog.find((c) => c.key.toLowerCase() === String(key).toLowerCase()) || null;
+    const k = String(key).toLowerCase();
+    return (
+      catalog.find(
+        (c) =>
+          c.key.toLowerCase() === k ||
+          (c.aliases || []).some((a) => a.toLowerCase() === k)
+      ) || null
+    );
   }
 
   function urlOf(key, value) {
@@ -265,7 +338,12 @@
   }
 
   function fillAddOptions() {
-    const used = new Set(social.map((s) => s.key.toLowerCase()));
+    // 已配置的平台不再出现在下拉里；旧配置里写成别名键的（如 Youtubecustom）也算已用
+    const used = new Set();
+    for (const s of social) {
+      const c = meta(s.key);
+      used.add((c ? c.key : s.key).toLowerCase());
+    }
     newKeyEl.innerHTML = '<option value="">选择平台…</option>';
     for (const c of catalog) {
       if (used.has(c.key.toLowerCase())) continue;
@@ -274,6 +352,7 @@
       o.textContent = c.label;
       newKeyEl.appendChild(o);
     }
+    newKeyEl.title = `共 ${catalog.length} 个平台，已用 ${used.size} 个`;
   }
 
   $('btnAddSocial').addEventListener('click', () => {
@@ -331,6 +410,69 @@
     pickFile(f);
   });
 
+  /* ---------- 访问统计 ---------- */
+
+  const anProvider = $('anProvider');
+  const gcSite = $('gcSite');
+  const gcCounters = $('gcCounters');
+  const umamiId = $('umamiId');
+  const umamiScript = $('umamiScript');
+  const ga4Id = $('ga4Id');
+  const cfToken = $('cfToken');
+  const anNote = $('anNote');
+
+  const AN_NOTES = {
+    none: '页脚不输出任何统计脚本。想恢复数字，选一个服务并填好对应 ID 即可。',
+    goatcounter:
+      '去 <a href="https://www.goatcounter.com/signup" target="_blank" rel="noopener">goatcounter.com</a> 注册（个人博客免费），把子域名填到左边；再到 Settings 勾选 <code>Allow adding visitor counts on your website</code>，页脚的「本站浏览 / 本页阅读量」才会显示。脚本约 3 KB，无 Cookie，支持排除自己。',
+    umami:
+      '在 <a href="https://cloud.umami.is" target="_blank" rel="noopener">cloud.umami.is</a> 注册后添加网站，把 Website ID 填进来。免费额度 10 万事件/月，来源、页面、设备、留存报表最完整；自建时把脚本地址换成自己的域名。',
+    ga4:
+      '在 <a href="https://analytics.google.com" target="_blank" rel="noopener">analytics.google.com</a> 建媒体资源，复制 <code>G-</code> 开头的衡量 ID。功能最全但脚本重，国内访问常被拦，数字会明显偏低。',
+    cloudflare:
+      '域名托管在 Cloudflare 时，在 Web Analytics 里添加站点并复制 token。免费、无 Cookie，但只有基础流量，无法显示页脚数字。',
+    busuanzi:
+      '不蒜子已经不建议使用：同一域名实测能返回 1.1 亿和 41 两种结果（按边缘节点/共享桶计数），没有报表也没法排查，只能当摆设。',
+  };
+
+  function syncAnFields() {
+    const p = anProvider.value;
+    document.querySelectorAll('[data-an]').forEach((el) => {
+      el.hidden = el.dataset.an !== p;
+    });
+    anNote.innerHTML = AN_NOTES[p] || '';
+  }
+
+  function buildAnalytics() {
+    const p = anProvider.value;
+    const need = {
+      goatcounter: [gcSite, 'GoatCounter 子域名', '例如 tianchoy'],
+      umami: [umamiId, 'Umami Website ID', '形如 5f2c…-…'],
+      ga4: [ga4Id, 'GA4 衡量 ID', 'G-XXXXXXXXXX'],
+      cloudflare: [cfToken, 'Cloudflare Token', ''],
+    }[p];
+    if (need && !need[0].value.trim()) {
+      const err = new Error(`启用这个服务要先填${need[1]}`);
+      err.focusEl = need[0];
+      throw err;
+    }
+    return {
+      provider: p,
+      goatcounterSite: gcSite.value.trim(),
+      goatcounterCounters: gcCounters.checked,
+      umamiScript: umamiScript.value.trim() || 'https://cloud.umami.is/script.js',
+      umamiWebsiteId: umamiId.value.trim(),
+      ga4MeasurementId: ga4Id.value.trim(),
+      cloudflareToken: cfToken.value.trim(),
+    };
+  }
+
+  anProvider.addEventListener('change', () => { syncAnFields(); markDirty(); });
+  gcCounters.addEventListener('change', markDirty);
+  [gcSite, umamiId, umamiScript, ga4Id, cfToken].forEach((el) =>
+    el.addEventListener('input', markDirty)
+  );
+
   /* ---------- 保存 ---------- */
 
   [siteTitleEl, profileTitleEl, descEl, subtitleEl].forEach((el) =>
@@ -365,6 +507,15 @@
     if (saving) return;
     if (!siteTitleEl.value.trim()) { toast('站点名称不能为空', 'err'); siteTitleEl.focus(); return; }
 
+    let analytics;
+    try {
+      analytics = buildAnalytics();
+    } catch (e) {
+      toast(e.message, 'err', 3600);
+      if (e.focusEl) e.focusEl.focus();
+      return;
+    }
+
     saving = true;
     const buttons = [$('btnSave'), $('btnSaveDeploy')];
     buttons.forEach((b) => (b.disabled = true));
@@ -393,6 +544,7 @@
           description: descEl.value.trim(),
           subtitle: subtitleEl.value.trim(),
           social,
+          analytics,
           deploy: Boolean(deploy),
         }),
       });

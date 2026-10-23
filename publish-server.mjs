@@ -20,6 +20,7 @@ import {
   saveAvatarFile,
   avatarExtFor,
 } from "./lib/site-config.mjs";
+import { listPosts, deletePosts } from "./lib/posts.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(ROOT, "public");
@@ -55,6 +56,7 @@ const MIME = {
 
 const PAGES = {
   "/publish": "publish.html",
+  "/manage": "manage.html",
   "/admin": "admin.html",
 };
 
@@ -327,8 +329,8 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (pathname === "/api/site" && req.method === "GET") {
-      const { site, social, catalog } = await readSiteSettings();
-      return sendJSON(res, 200, { ok: true, site, social, catalog });
+      const { site, social, analytics, catalog } = await readSiteSettings();
+      return sendJSON(res, 200, { ok: true, site, social, analytics, catalog });
     }
 
     if (pathname === "/api/site" && req.method === "POST") {
@@ -342,6 +344,8 @@ const server = http.createServer(async (req, res) => {
         ok: deploy.ok,
         site: result.site,
         social: result.social,
+        analytics: result.analytics,
+        catalog: result.catalog,
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
         deploy,
       });
@@ -386,6 +390,32 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
+        deploy,
+      });
+    }
+
+    // —— 文章管理
+    if (pathname === "/api/posts" && req.method === "GET") {
+      const posts = await listPosts();
+      return sendJSON(res, 200, {
+        ok: true,
+        posts: posts.map(({ abs, mtime, ...rest }) => rest),
+        stats: {
+          total: posts.length,
+          drafts: posts.filter((p) => p.draft).length,
+          words: posts.reduce((n, p) => n + p.words, 0),
+        },
+      });
+    }
+
+    if (pathname === "/api/posts/delete" && req.method === "POST") {
+      const payload = await readJSON(req);
+      const deleted = await deletePosts(payload.files);
+      const deploy = await deployOrSkip(!payload.deploy);
+      return sendJSON(res, deploy.ok ? 200 : 500, {
+        ok: deploy.ok,
+        deleted,
+        error: deploy.ok ? undefined : `已删除 ${deleted.length} 篇，但部署失败（退出码 ${deploy.code}）`,
         deploy,
       });
     }

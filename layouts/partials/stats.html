@@ -1,0 +1,92 @@
+{{- /* 访问统计：按 [params.analytics].provider 注入对应服务，未配置就什么都不输出。
+       provider 可选：none | goatcounter | umami | ga4 | cloudflare | busuanzi
+       原来的不蒜子数据会随边缘节点变化（同一域名能返回 1.1 亿和 41 两种结果），仅作兜底保留。 */ -}}
+{{- $a := .Site.Params.analytics | default dict -}}
+{{- $p := lower (string ($a.provider | default "none")) -}}
+
+{{- if eq $p "goatcounter" -}}
+  {{- $gc := $a.goatcounter | default dict -}}
+  {{- $site := trim (string ($gc.site | default "")) " " -}}
+  {{- if $site -}}
+    {{- $host := printf "https://%s.goatcounter.com" $site -}}
+    {{- $counters := true -}}
+    {{- if isset $gc "counters" -}}{{- $counters = $gc.counters -}}{{- end -}}
+    {{- if $counters }}
+<div class="busuanzi-stats gc-stats" id="gc-stats" hidden>
+  <span>本站浏览 <span id="gc-total">–</span> 次</span>
+  <span class="busuanzi-sep">·</span>
+  <span>本页阅读量 <span id="gc-page">–</span> 次</span>
+</div>
+    {{- end }}
+<script data-goatcounter="{{ $host }}/count" async src="https://gc.zgo.at/count.js"></script>
+    {{- if $counters }}
+<script>
+(function () {
+  var base = '{{ $host }}/counter/';
+  function fill(path, id) {
+    return fetch(base + encodeURIComponent(path) + ".json", { credentials: "omit" })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || d.count == null) return false;
+        var el = document.getElementById(id);
+        if (el) el.textContent = d.count;
+        return true;
+      })
+      .catch(function () { return false; });
+  }
+  Promise.all([fill("TOTAL", "gc-total"), fill(location.pathname, "gc-page")])
+    .then(function (res) {
+      if (res[0] || res[1]) document.getElementById("gc-stats").hidden = false;
+    });
+})();
+</script>
+    {{- end }}
+  {{- else -}}
+    {{- warnf "params.analytics.goatcounter.site 还没填，页脚统计不会显示" -}}
+  {{- end -}}
+
+{{- else if eq $p "umami" -}}
+  {{- $u := $a.umami | default dict -}}
+  {{- $id := trim (string ($u.websiteId | default "")) " " -}}
+  {{- $src := trim (string ($u.script | default "https://cloud.umami.is/script.js")) " " -}}
+  {{- if $id }}
+<script defer src="{{ $src }}" data-website-id="{{ $id }}"></script>
+  {{- else -}}
+    {{- warnf "params.analytics.umami.websiteId 还没填" -}}
+  {{- end -}}
+
+{{- else if eq $p "ga4" -}}
+  {{- $g := $a.ga4 | default dict -}}
+  {{- $id := trim (string ($g.measurementId | default "")) " " -}}
+  {{- if $id }}
+<script async src="https://www.googletagmanager.com/gtag/js?id={{ $id }}"></script>
+<script>
+window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag("js", new Date());
+gtag("config", '{{ $id }}');
+</script>
+  {{- else -}}
+    {{- warnf "params.analytics.ga4.measurementId 还没填" -}}
+  {{- end -}}
+
+{{- else if eq $p "cloudflare" -}}
+  {{- $c := $a.cloudflare | default dict -}}
+  {{- $token := trim (string ($c.token | default "")) " " -}}
+  {{- if $token }}
+    {{- $beacon := printf "{\"token\":\"%s\"}" $token }}
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{{ $beacon | safeHTMLAttr }}'></script>
+  {{- else -}}
+    {{- warnf "params.analytics.cloudflare.token 还没填" -}}
+  {{- end -}}
+
+{{- else if eq $p "busuanzi" }}
+<div class="busuanzi-stats">
+  <span id="busuanzi_container_site_pv">本站总访问量 <span id="busuanzi_value_site_pv">-</span> 次</span>
+  <span class="busuanzi-sep">·</span>
+  <span id="busuanzi_container_site_uv">访客数 <span id="busuanzi_value_site_uv">-</span> 人</span>
+  <span class="busuanzi-sep">·</span>
+  <span id="busuanzi_container_page_pv">本页阅读量 <span id="busuanzi_value_page_pv">-</span> 次</span>
+</div>
+<script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+{{- end -}}

@@ -60,7 +60,7 @@ summaryLength = 30
     provider = "goatcounter"
     [params.analytics.goatcounter]
       # 注册后拿到子域名填这里，例如 tianchoy → https://tianchoy.goatcounter.com
-      site = "tianchao"
+      site = "https://tianchao.goatcounter.com"
       # 页脚显示「本站浏览 / 本页阅读量」，需要后台勾选 Allow adding visitor counts on your website
       counters = true
     [params.analytics.umami]

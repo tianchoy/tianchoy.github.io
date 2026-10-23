@@ -149,6 +149,14 @@
   }
 }
 
+// 访问量统计（不蒜子）
+.busuanzi-stats {
+  .busuanzi-sep {
+    margin: 0 .4rem;
+    opacity: .5;
+  }
+}
+
 // 文章底部：更新时间与分享图标位于同一行，分列左右两端
 .post-footer .post-info {
   display: flex;

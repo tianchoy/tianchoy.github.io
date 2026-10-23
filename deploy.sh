@@ -1,29 +1,14 @@
 #!/usr/bin/env sh
 
-# 忽略错误
+# 单仓库 + GitHub Actions 发布流程：
+# 本地只做一次构建校验（输出到 public/，已被 .gitignore 忽略），
+# 然后把源码提交并推送到 tianchoy.github.io 仓库，由 Actions 构建并发布。
 set -e
 
-# 使用 Hugo 构建静态站点（输出到 public/）
+# 本地构建校验，尽早发现模板/配置错误（public/ 不进入仓库）
 hugo --gc --minify --cleanDestinationDir
 
-# 进入待发布的目录
-cd public
-
-# 如果是发布到自定义域名
-# echo 'www.example.com' > CNAME
-
-git init
+# 提交并推送源码，触发 GitHub Actions 构建发布
 git add -A
-git commit -m 'deploy'
-
-# 部署到 https://<USERNAME>.github.io
-# 注意：GitHub Pages 可能从 master 构建，main 与 master 都推送，确保生效
-git push -f git@github.com:tianchoy/tianchoy.github.io.git main
-git push -f git@github.com:tianchoy/tianchoy.github.io.git main:master
-
-cd ..
-
-git add -A
-git diff --cached --quiet || git commit -m 'blog update'
-git push -f git@github.com:tianchoy/blogData-main.git main
+git diff --cached --quiet || git commit -m "blog update: $(date '+%Y-%m-%d %H:%M')"
 git push origin main

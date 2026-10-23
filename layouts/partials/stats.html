@@ -7,6 +7,13 @@
 {{- if eq $p "goatcounter" -}}
   {{- $gc := $a.goatcounter | default dict -}}
   {{- $site := trim (string ($gc.site | default "")) " " -}}
+  {{- /* site 只该是子域名。容错：允许手填整条 URL，剥掉协议/路径/.goatcounter.com 后缀，
+         避免拼成 https://https://x.goatcounter.com.goatcounter.com 这种坏地址 */ -}}
+  {{- $site = $site | replaceRE `^https?://` "" -}}
+  {{- $site = $site | replaceRE `^//` "" -}}
+  {{- $site = index (split $site "/") 0 -}}
+  {{- $site = $site | replaceRE `(?i)\.goatcounter\.com$` "" -}}
+  {{- $site = lower $site -}}
   {{- if $site -}}
     {{- $host := printf "https://%s.goatcounter.com" $site -}}
     {{- $counters := true -}}

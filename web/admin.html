@@ -139,7 +139,8 @@
 
           <div class="field" data-an="goatcounter" hidden>
             <label for="gcSite">GoatCounter 子域名</label>
-            <input id="gcSite" type="text" placeholder="例如 tianchoy" autocomplete="off" spellcheck="false">
+            <input id="gcSite" type="text" placeholder="tianchao（只填这一段，别填整条网址）" autocomplete="off" spellcheck="false">
+            <span class="hint">后台给你的地址是 https://tianchao.goatcounter.com，这里只填 tianchao</span>
           </div>
 
           <div class="field" data-an="umami" hidden>
@@ -443,22 +444,35 @@
     anNote.innerHTML = AN_NOTES[p] || '';
   }
 
+  function normalizeGcSite(v) {
+    let s = String(v || '').trim();
+    if (!s) return '';
+    s = s.replace(/^https?:\/\//i, '').replace(/^\/\//, '');
+    s = s.split(/[/?#\s]/)[0];
+    s = s.replace(/\.goatcounter\.com\.?$/i, '');
+    return s.toLowerCase().replace(/[^a-z0-9-]/g, '');
+  }
+
   function buildAnalytics() {
     const p = anProvider.value;
     const need = {
-      goatcounter: [gcSite, 'GoatCounter 子域名', '例如 tianchoy'],
+      goatcounter: [gcSite, 'GoatCounter 子域名', '例如 tianchao'],
       umami: [umamiId, 'Umami Website ID', '形如 5f2c…-…'],
       ga4: [ga4Id, 'GA4 衡量 ID', 'G-XXXXXXXXXX'],
       cloudflare: [cfToken, 'Cloudflare Token', ''],
     }[p];
-    if (need && !need[0].value.trim()) {
-      const err = new Error(`启用这个服务要先填${need[1]}`);
-      err.focusEl = need[0];
-      throw err;
+    if (need) {
+      // goatcounter 允许粘整条网址，判空按归一化后的值算
+      const filled = p === 'goatcounter' ? normalizeGcSite(need[0].value) : need[0].value.trim();
+      if (!filled) {
+        const err = new Error(`启用这个服务要先填${need[1]}`);
+        err.focusEl = need[0];
+        throw err;
+      }
     }
     return {
       provider: p,
-      goatcounterSite: gcSite.value.trim(),
+      goatcounterSite: normalizeGcSite(gcSite.value),
       goatcounterCounters: gcCounters.checked,
       umamiScript: umamiScript.value.trim() || 'https://cloud.umami.is/script.js',
       umamiWebsiteId: umamiId.value.trim(),
@@ -472,6 +486,14 @@
   [gcSite, umamiId, umamiScript, ga4Id, cfToken].forEach((el) =>
     el.addEventListener('input', markDirty)
   );
+  // 粘整条网址也认：失焦时就地收敛成纯子域名，避免写进配置后拼出坏地址
+  gcSite.addEventListener('blur', () => {
+    const v = normalizeGcSite(gcSite.value);
+    if (v !== gcSite.value) {
+      gcSite.value = v;
+      markDirty();
+    }
+  });
 
   /* ---------- 保存 ---------- */
 

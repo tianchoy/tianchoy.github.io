@@ -22,9 +22,14 @@
     {{- if $counters }}
 <script>
 (function () {
+  /* GoatCounter 的 counter 接口：/counter/<path>.json，path 是浏览器 location.pathname
+     的原样值（已做百分号编码，中文路径直接可用），首页就是 /counter//.json；
+     全站总量用保留字 TOTAL（大写、没有前导斜杠）。
+     注意：后台必须勾选 Allow adding visitor counts on your website，
+     否则这里会拿到 403，统计条保持隐藏。 */
   var base = '{{ $host }}/counter/';
   function fill(path, id) {
-    return fetch(base + encodeURIComponent(path) + ".json", { credentials: "omit" })
+    return fetch(base + path + ".json", { credentials: "omit" })
       .then(function (r) { return r.ok ? r.json() : null; })
       .then(function (d) {
         if (!d || d.count == null) return false;
@@ -34,9 +39,11 @@
       })
       .catch(function () { return false; });
   }
-  Promise.all([fill("TOTAL", "gc-total"), fill(location.pathname, "gc-page")])
+  var page = location.pathname || "/";
+  Promise.all([fill("TOTAL", "gc-total"), fill(page, "gc-page")])
     .then(function (res) {
-      if (res[0] || res[1]) document.getElementById("gc-stats").hidden = false;
+      var box = document.getElementById("gc-stats");
+      if (box && (res[0] || res[1])) box.hidden = false;
     });
 })();
 </script>

@@ -2,7 +2,7 @@
 title: "flex布局里的属性"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vue3"]
+tags: ["CSS", "Flex布局", "前端", "笔记", "样式"]
 draft: false
 ---
 

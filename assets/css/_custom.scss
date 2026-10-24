@@ -231,9 +231,19 @@ body[theme="dark"] {
   // 主题只给了继承色（近黑），和左边「收录于」的蓝不一致
   a {
     color: $single-link-color;
+    // 中文默认可在任意字间断行，窄屏下「历史」会被拆成两行，整词不换行更像标签
+    white-space: nowrap;
 
     &:hover {
       opacity: 0.8;
     }
+  }
+}
+
+// 窄屏下标签多半会换行，图标如果留在上一行末尾会很怪，干脆整块另起一行
+@media (max-width: 640px) {
+  .single .post-meta .post-meta-tags {
+    display: block;
+    margin-top: 0.25rem;
   }
 }

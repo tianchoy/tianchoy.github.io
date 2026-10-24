@@ -2,7 +2,7 @@
 title: "鸿蒙开发app资源库"
 date: 2025-08-03T08:30:18+08:00
 categories: ["dart"]
-tags: ["dart"]
+tags: ["HarmonyOS", "鸿蒙", "资源库", "App开发", "工具"]
 draft: false
 ---
 

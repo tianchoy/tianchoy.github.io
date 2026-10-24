@@ -2,7 +2,7 @@
 title: "vben admin pro 框架的 ApiComponent Api组件包装器select使用示例"
 date: 2026-02-02T22:27:31+08:00
 categories: ["Vue3"]
-tags: ["Vue3"]
+tags: ["Vben Admin", "Vue3", "表单", "Select", "组件"]
 draft: false
 ---
 

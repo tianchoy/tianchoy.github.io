@@ -2,7 +2,7 @@
 title: "November rain"
 date: 2024-10-20T11:42:58+08:00
 categories: ["diary"]
-tags: ["diary"]
+tags: ["散文", "冬天", "音乐", "回忆", "十一月"]
 draft: false
 ---
 

@@ -2,7 +2,7 @@
 title: "node 安装多版本"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vue3"]
+tags: ["Node.js", "版本管理", "命令行", "环境配置", "多版本"]
 draft: false
 ---
 

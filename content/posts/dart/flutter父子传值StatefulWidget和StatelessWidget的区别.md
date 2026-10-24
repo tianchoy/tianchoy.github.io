@@ -2,7 +2,7 @@
 title: "flutter父子传值StatefulWidget和StatelessWidget的区别"
 date: 2024-10-20T11:42:58+08:00
 categories: ["dart"]
-tags: ["dart"]
+tags: ["Flutter", "组件通信", "StatefulWidget", "StatelessWidget", "基础"]
 draft: false
 ---
 

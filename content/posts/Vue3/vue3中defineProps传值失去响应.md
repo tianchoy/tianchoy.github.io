@@ -2,7 +2,7 @@
 title: "vue3中defineProps传值失去响应"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vue3"]
+tags: ["Vue3", "Props", "响应式", "解构", "踩坑"]
 draft: false
 ---
 

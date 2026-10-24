@@ -2,7 +2,7 @@
 title: "python用pyinstaller打包exe,去掉黑窗口"
 date: 2024-10-20T11:42:58+08:00
 categories: ["python"]
-tags: ["python"]
+tags: ["Python", "PyInstaller", "打包", "EXE", "Windows"]
 draft: false
 ---
 

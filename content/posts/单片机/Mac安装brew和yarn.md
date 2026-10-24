@@ -2,7 +2,7 @@
 title: "Mac安装brew和yarn"
 date: 2024-10-20T11:42:58+08:00
 categories: ["单片机"]
-tags: ["单片机"]
+tags: ["Mac", "Homebrew", "Yarn", "环境配置", "镜像"]
 draft: false
 ---
 

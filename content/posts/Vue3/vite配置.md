@@ -2,7 +2,7 @@
 title: "vite配置"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vue3"]
+tags: ["Vite", "构建工具", "配置", "Vue3", "前端"]
 draft: false
 ---
 

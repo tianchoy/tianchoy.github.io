@@ -2,7 +2,7 @@
 title: "uniappx开发app，获取验证码倒计时功能"
 date: 2025-07-08T22:07:07+08:00
 categories: ["python"]
-tags: ["python"]
+tags: ["跨端开发", "验证码", "倒计时", "UTS", "FirstUI"]
 draft: false
 ---
 

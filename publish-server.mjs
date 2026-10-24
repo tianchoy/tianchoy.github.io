@@ -22,7 +22,7 @@ import {
   saveAvatarFile,
   avatarExtFor,
 } from "./lib/site-config.mjs";
-import { listPosts, deletePosts, readPost, savePost } from "./lib/posts.mjs";
+import { listPosts, deletePosts, readPost, savePost, postPermalink } from "./lib/posts.mjs";
 import { readAboutPage, saveAboutPage } from "./lib/about.mjs";
 import { suggestTags } from "./lib/auto-tags.mjs";
 
@@ -81,17 +81,27 @@ function readBody(req, limit = 16 * 1024 * 1024) {
   return new Promise((resolve, reject) => {
     const chunks = [];
     let size = 0;
+    let done = false;
     req.on("data", (chunk) => {
+      if (done) return;
       size += chunk.length;
       if (size > limit) {
-        reject(new Error("请求体过大"));
-        req.destroy();
+        done = true;
+        const err = new Error(`请求体过大（上限 ${Math.round(limit / 1024 / 1024)}MB）`);
+        err.status = 413;
+        // 不 destroy 连接，让上层还能把 413 回给浏览器；只是不再收数据
+        req.pause();
+        reject(err);
         return;
       }
       chunks.push(chunk);
     });
-    req.on("end", () => resolve(Buffer.concat(chunks)));
-    req.on("error", reject);
+    req.on("end", () => {
+      if (!done) resolve(Buffer.concat(chunks));
+    });
+    req.on("error", (e) => {
+      if (!done) reject(e);
+    });
   });
 }
 
@@ -108,18 +118,53 @@ async function readJSON(req) {
 function sanitizeFilename(name) {
   const s = String(name)
     .trim()
-    .replace(/[\/\\:*?"<>|]/g, "")
+    // 路径分隔符与控制字符会让文件写到 content/posts 外面，先彻底剔掉
+    // eslint-disable-next-line no-control-regex
+    .replace(/[/\\:*?"<>|\u0000-\u001f]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    // 前导点会变成隐藏文件，前导横线在命令行里会被当成参数
+    .replace(/^[.\-]+|[.\-]+$/g, "")
+    // macOS 单个文件名上限 255 字节，中文一个字 3 字节，留足余量
+    .slice(0, 80);
   return s || "untitled";
+}
+
+// 分类名会成为 content/posts 下的目录名，规则同文件名，另外不允许只剩点号
+function sanitizeDirName(name) {
+  const s = sanitizeFilename(name);
+  return s === "untitled" ? "" : s;
+}
+
+// 建目录前先按「忽略大小写」找现成的：仓库里是 Vue3，用户打成 vue3 时
+// 不能再建一个 vue3 目录——Hugo 会把两者小写成同一个 URL，直接互相覆盖
+async function resolveCategoryDir(category) {
+  const safe = sanitizeDirName(category);
+  if (!safe) {
+    const e = new Error("分类名不合法（不能为空，也不能只由符号组成）");
+    e.status = 400;
+    throw e;
+  }
+  let entries = [];
+  try {
+    entries = await fsp.readdir(CONTENT_DIR, { withFileTypes: true });
+  } catch {
+    /* 目录还不存在 */
+  }
+  const hit = entries.find((e) => e.isDirectory() && e.name.toLowerCase() === safe.toLowerCase());
+  return hit ? hit.name : safe;
 }
 
 function nowLocal() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, "0");
+  // 时区偏移按本机算，别写死 +08:00（换台机器或改了时区就会写错时间）
+  const off = -d.getTimezoneOffset();
+  const sign = off >= 0 ? "+" : "-";
+  const abs = Math.abs(off);
   return (
     `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
-    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}+08:00`
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}` +
+    `${sign}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`
   );
 }
 
@@ -165,9 +210,23 @@ async function readCategories() {
   return [...cats].sort((a, b) => a.localeCompare(b, "zh"));
 }
 
+// 标签统一去重、去空白，并限制数量：标签太多详情页会挤成一片
+function cleanTags(tags, max = 8) {
+  const out = [];
+  for (const raw of Array.isArray(tags) ? tags : []) {
+    const t = String(raw == null ? "" : raw).replace(/[\r\n\t]/g, " ").trim();
+    if (!t || t.length > 24) continue;
+    if (out.includes(t)) continue;
+    out.push(t);
+    if (out.length >= max) break;
+  }
+  return out;
+}
+
 async function createPost({ category, title, content, tags }) {
   const slug = sanitizeFilename(title);
-  const dir = path.join(CONTENT_DIR, category);
+  const catDir = await resolveCategoryDir(category);
+  const dir = path.join(CONTENT_DIR, catDir);
   await fsp.mkdir(dir, { recursive: true });
 
   let file = path.join(dir, slug + ".md");
@@ -182,37 +241,26 @@ async function createPost({ category, title, content, tags }) {
     }
   }
 
-  const tagList = (tags || [])
-    .map((t) => String(t).trim())
-    .filter(Boolean)
+  const tagList = cleanTags(tags)
     .map((t) => JSON.stringify(t))
     .join(", ");
 
   const fm =
     `---\ntitle: ${JSON.stringify(title)}\n` +
     `date: ${nowLocal()}\n` +
-    `categories: [${JSON.stringify(category)}]\n` +
+    `categories: [${JSON.stringify(catDir)}]\n` +
     (tagList ? `tags: [${tagList}]\n` : "") +
     `draft: false\n---\n\n${String(content).replace(/\s+$/, "")}\n`;
 
   await fsp.writeFile(file, fm, "utf-8");
 
   const rel = path.relative(ROOT, file).split(path.sep).join("/");
-  const permalink =
-    "https://tianchoy.github.io/" +
-    path
-      .relative(path.join(ROOT, "content"), file)
-      .split(path.sep)
-      .join("/")
-      .replace(/\.md$/, "") +
-    "/";
-
-  return { file: rel, permalink, absFile: file };
+  return { file: rel, permalink: postPermalink(file), absFile: file, category: catDir };
 }
 
 // ---------- 部署 ----------
 
-function runDeploy() {
+function doDeploy() {
   return new Promise((resolve) => {
     const started = Date.now();
     const child = spawn("bash", ["deploy.sh"], {
@@ -220,17 +268,57 @@ function runDeploy() {
       env: PATH_ENV,
     });
     let out = "";
+    let settled = false;
+    const finish = (r) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(r);
+    };
+    // 网络卡住时 git push 可能一直不返回，别让请求和后续发布无限等下去
+    const timer = setTimeout(() => {
+      try {
+        child.kill("SIGKILL");
+      } catch {
+        /* ignore */
+      }
+      finish({ ok: false, code: -1, output: out + "\n部署超时（超过 5 分钟），已终止", ms: Date.now() - started });
+    }, 5 * 60 * 1000);
+
     const push = (d) => {
       out += d;
       if (out.length > 200000) out = out.slice(-100000);
     };
     child.stdout.on("data", push);
     child.stderr.on("data", push);
-    child.on("error", (e) => resolve({ ok: false, code: -1, output: out + "\n" + e.message, ms: Date.now() - started }));
+    child.on("error", (e) =>
+      finish({ ok: false, code: -1, output: out + "\n" + e.message, ms: Date.now() - started })
+    );
     child.on("close", (code) =>
-      resolve({ ok: code === 0, code, output: out.slice(-8000), ms: Date.now() - started })
+      finish({ ok: code === 0, code, output: out.slice(-8000), ms: Date.now() - started })
     );
   });
+}
+
+// 发布串行化：两次点击/两个标签页同时保存时，第二份 git 操作会撞上
+// .git/index.lock，或者把前一次的 commit 顶掉。这里排队执行。
+let deployQueue = Promise.resolve();
+function runDeploy() {
+  const task = deployQueue.then(doDeploy, doDeploy);
+  deployQueue = task.then(
+    () => undefined,
+    () => undefined
+  );
+  return task;
+}
+
+// 前端历史上用了两种字段：publish 传 dryRun（true=不发布），
+// site/about/delete 传 deploy（true=发布）。两种都认，避免改一处漏一处。
+function shouldDeploy(payload) {
+  const p = payload || {};
+  if (typeof p.dryRun === "boolean") return !p.dryRun;
+  if (typeof p.deploy === "boolean") return p.deploy;
+  return true;
 }
 
 async function deployOrSkip(skip) {
@@ -245,6 +333,11 @@ function sendFile(res, filePath, cache = "no-store") {
   const stream = nodeFs.createReadStream(filePath);
   stream.on("open", () => {
     res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": cache });
+    // HEAD 只回头部，别把整个文件也流出去
+    if (res.req && res.req.method === "HEAD") {
+      stream.destroy();
+      res.end();
+    }
   });
   stream.on("error", () => {
     if (!res.headersSent) {
@@ -258,9 +351,20 @@ function sendFile(res, filePath, cache = "no-store") {
 }
 
 async function resolveFile(baseDir, relPath) {
-  const clean = decodeURIComponent(relPath);
-  const target = path.normalize(path.join(baseDir, clean));
-  if (!target.startsWith(baseDir)) return null;
+  let clean;
+  try {
+    clean = decodeURIComponent(relPath);
+  } catch {
+    return null; // 非法百分号编码，按「不存在」处理，别一路冒到 500
+  }
+  if (clean.includes("\u0000")) return null;
+
+  const base = path.resolve(baseDir);
+  const target = path.resolve(base, clean);
+  // 用 relative 判断包含关系：startsWith 会把 sibling 目录（/web-evil）误判成在 /web 内
+  const rel = path.relative(base, target);
+  if (!rel || rel.startsWith("..") || path.isAbsolute(rel)) return null;
+
   try {
     const stat = await fsp.stat(target);
     if (stat.isDirectory()) {
@@ -271,6 +375,32 @@ async function resolveFile(baseDir, relPath) {
     return target;
   } catch {
     return null;
+  }
+}
+
+// ---------- 同源保护 ----------
+//
+// 服务只监听 127.0.0.1，但浏览器里任何一个网页都能往 127.0.0.1 发 POST
+// （CSRF），也能靠 DNS rebinding 把本站伪装成同源。写操作一旦被别的站点触发，
+// 就等于让外部网页替我们发文章、改配置、关服务。
+// 这里要求：Host 必须是本机地址，且带上来的 Origin 也必须是本机地址。
+const LOCAL_HOSTNAMES = new Set(["127.0.0.1", "localhost", "[::1]", "::1"]);
+
+function isLocalHostname(value) {
+  const h = String(value || "").trim().toLowerCase();
+  if (!h) return false;
+  return LOCAL_HOSTNAMES.has(h);
+}
+
+function isLocalRequest(req) {
+  const host = String(req.headers.host || "").toLowerCase().replace(/:\d+$/, "");
+  if (!isLocalHostname(host)) return false;
+  const origin = req.headers.origin;
+  if (!origin) return true; // 同源导航、curl、本地脚本都不带 Origin
+  try {
+    return isLocalHostname(new URL(origin).hostname);
+  } catch {
+    return false;
   }
 }
 
@@ -285,6 +415,11 @@ const server = http.createServer(async (req, res) => {
     return res.end("Bad Request");
   }
   const pathname = url.pathname;
+
+  if (!isLocalRequest(req)) {
+    res.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+    return res.end("Forbidden：只接受来自本机的请求");
+  }
 
   try {
     // —— 页面
@@ -345,7 +480,7 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 400, { ok: false, error: "站点名称不能为空" });
       }
       const result = await saveSiteSettings(payload);
-      const deploy = await deployOrSkip(!payload.deploy);
+      const deploy = await deployOrSkip(!shouldDeploy(payload));
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         site: result.site,
@@ -367,7 +502,7 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 400, { ok: false, error: "关于页正文不能全是空白" });
       }
       const about = await saveAboutPage(payload);
-      const deploy = await deployOrSkip(!payload.deploy);
+      const deploy = await deployOrSkip(!shouldDeploy(payload));
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         about,
@@ -412,9 +547,9 @@ const server = http.createServer(async (req, res) => {
         category,
         title,
         content,
-        tags: Array.isArray(payload.tags) ? payload.tags : [],
+        tags: cleanTags(payload.tags),
       });
-      const deploy = await deployOrSkip(Boolean(payload.dryRun));
+      const deploy = await deployOrSkip(!shouldDeploy(payload));
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         file: created.file,
@@ -475,9 +610,9 @@ const server = http.createServer(async (req, res) => {
         category,
         title,
         content,
-        tags: Array.isArray(payload.tags) ? payload.tags : [],
+        tags: cleanTags(payload.tags),
       });
-      const deploy = await deployOrSkip(Boolean(payload.dryRun));
+      const deploy = await deployOrSkip(!shouldDeploy(payload));
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         saved: true,
@@ -491,7 +626,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/api/posts/delete" && req.method === "POST") {
       const payload = await readJSON(req);
       const deleted = await deletePosts(payload.files);
-      const deploy = await deployOrSkip(!payload.deploy);
+      const deploy = await deployOrSkip(!shouldDeploy(payload));
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         deleted,
@@ -514,7 +649,8 @@ const server = http.createServer(async (req, res) => {
     res.end("Not Found");
   } catch (e) {
     const msg = String((e && e.message) || e);
-    if (!res.headersSent) sendJSON(res, 500, { ok: false, error: msg });
+    const status = (e && e.status) || 500;
+    if (!res.headersSent) sendJSON(res, status, { ok: false, error: msg });
     else {
       try {
         res.destroy();
@@ -527,6 +663,18 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log(`写作台已启动 → http://${HOST}:${PORT}/publish`);
+});
+
+server.on("error", (e) => {
+  if (e.code === "EADDRINUSE") {
+    console.error(
+      `端口 ${PORT} 已被占用：写作台可能已经在运行（直接打开 http://${HOST}:${PORT}/publish），` +
+        `或者换个端口启动：PORT=4333 bun publish-server.mjs`
+    );
+  } else {
+    console.error(`服务启动失败：${e.message}`);
+  }
+  process.exit(1);
 });
 
 process.on("SIGTERM", () => process.exit(0));

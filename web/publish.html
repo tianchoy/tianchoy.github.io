@@ -228,11 +228,19 @@ console.log('代码块')
   });
 
   $('tb-link').addEventListener('click', () => {
-    const url = prompt('链接地址', 'https://');
+    const url = (prompt('链接地址', 'https://') || '').trim();
     if (!url) return;
-    const sel = contentEl.value.slice(contentEl.selectionStart, contentEl.selectionEnd) || '链接文字';
-    surround('[', `](${url})`);
-    contentEl.value = contentEl.value.replace('[链接文字]', '[' + sel + ']');
+    const { selectionStart: s, selectionEnd: e, value } = contentEl;
+    const sel = value.slice(s, e);
+    if (sel) {
+      contentEl.setRangeText(`[${sel}](${url})`, s, e, 'end');
+    } else {
+      // 没选中就插入占位文字，并把它选中，直接打字即可替换
+      const text = '链接文字';
+      contentEl.setRangeText(`[${text}](${url})`, s, e, 'end');
+      contentEl.setSelectionRange(s + 1, s + 1 + text.length);
+    }
+    contentEl.focus();
     onInput();
   });
 
@@ -543,7 +551,6 @@ console.log('代码块')
     onInput();
     if (restored) toast('已恢复上次未发布的草稿');
     (titleEl.value ? contentEl : titleEl).focus();
-    titleEl.focus();
   })();
 })();
 </script>

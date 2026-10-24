@@ -25,7 +25,13 @@
   }
 
   async function api(url, options = {}) {
-    const res = await fetch(url, options);
+    let res;
+    try {
+      res = await fetch(url, options);
+    } catch {
+      // 服务被关掉、或端口被占时 fetch 直接抛 TypeError，原文只有 "Failed to fetch"
+      throw new Error("连不上本地服务，可能已经关闭了（重新双击「写作台.app」即可）");
+    }
     let data = null;
     try {
       data = await res.json();
@@ -70,11 +76,13 @@
     });
 
     s = esc(s);
+    // 预览里的链接来自自己写的正文，仍然挡掉 javascript: —— 手滑粘进来一条就是一次点击执行
+    const safeUrl = (u) => (/^\s*javascript:/i.test(u) ? "#" : u);
     s = s.replace(/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/g, (m, alt, src, title) => {
-      return `<img src="${src}" alt="${alt}"${title ? ` title="${title}"` : ""}>`;
+      return `<img src="${safeUrl(src)}" alt="${alt}"${title ? ` title="${title}"` : ""}>`;
     });
     s = s.replace(/\[([^\]]+)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/g, (m, t, href, title) => {
-      return `<a href="${href}"${title ? ` title="${title}"` : ""} target="_blank" rel="noopener">${t}</a>`;
+      return `<a href="${safeUrl(href)}"${title ? ` title="${title}"` : ""} target="_blank" rel="noopener">${t}</a>`;
     });
     s = s.replace(/(^|[\s(])(https?:\/\/[^\s<)]+)/g, (m, p, u) => `${p}<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
     s = s.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");

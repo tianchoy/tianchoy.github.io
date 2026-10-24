@@ -195,22 +195,23 @@ body[theme="dark"] {
 }
 
 // 文章元信息里的作者：头像是圆形小图，和名字居中对齐
-.post-author {
-  .author {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-  }
+.post-meta .post-author .author {
+  // 主题给 .post-meta .author 设了 1.05rem，比同行的分类/日期大一圈，拉回元信息基准字号
+  font-size: 0.875rem;
 
-  .author-avatar {
-    flex: none;
-    width: 1.15em;
-    height: 1.15em;
-    border-radius: 50%;
-    object-fit: cover;
-    // 图还没加载完时留个浅色占位，避免文字跳动
-    background-color: rgba(128, 128, 128, 0.15);
-  }
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.post-meta .post-author .author-avatar {
+  flex: none;
+  width: 1.3em;
+  height: 1.3em;
+  border-radius: 50%;
+  object-fit: cover;
+  // 图还没加载完时留个浅色占位，避免文字跳动
+  background-color: rgba(128, 128, 128, 0.15);
 }
 
 // 标签链接沿用文章内链接色：主题只给了继承色（近黑），和左边「收录于」的蓝不一致

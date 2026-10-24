@@ -31,7 +31,7 @@
 <main class="page wide">
   <div class="page-head">
     <h1>文章管理</h1>
-    <p>列出 <code style="font-family:var(--mono)">content/posts</code> 下的全部文章。删除会直接移除 Markdown 文件，可选顺手发布。</p>
+    <p>列出 <code style="font-family:var(--mono)">content/posts</code> 下的全部文章。点「编辑」在写作台里改标题、分类、标签和正文；删除会直接移除 Markdown 文件，可选顺手发布。</p>
   </div>
 
   <div id="result"></div>
@@ -159,7 +159,12 @@
             <td class="num col-date">${esc(p.date)}</td>
             <td class="num col-words">${fmtWords(p.words)}</td>
             <td class="num col-size">${fmtSize(p.size)}</td>
-            <td class="t-act"><button class="btn btn-danger btn-sm" data-del="${i}">删除</button></td>
+            <td class="t-act">
+              <span class="act-group">
+                <a class="btn btn-ghost btn-sm" href="/publish?file=${encodeURIComponent(p.file)}">编辑</a>
+                <button class="btn btn-danger btn-sm" data-del="${i}">删除</button>
+              </span>
+            </td>
           </tr>`;
         })
         .join('');

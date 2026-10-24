@@ -194,22 +194,24 @@ body[theme="dark"] {
   }
 }
 
-// 文章元信息里的作者：头像是圆形小图，和名字居中对齐
+// 文章元信息里的作者：头像是圆形小图，名字与「收录于 / 分类」共用一条基线
 .post-meta .post-author .author {
   // 主题给 .post-meta .author 设了 1.05rem，比同行的分类/日期大一圈，拉回元信息基准字号
   font-size: 0.875rem;
 
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
+  // 不能用 inline-flex：行内弹性盒的基线取首个 flex item（图片）的底边，
+  // 整块文字会被顶到相邻文本基线之上。保持行内，靠图片的 vertical-align 对齐。
+  display: inline;
 }
 
 .post-meta .post-author .author-avatar {
-  flex: none;
   width: 1.3em;
   height: 1.3em;
   border-radius: 50%;
   object-fit: cover;
+  // 底边下压 0.3em，1.3em 高的图正好以文本基线为中心，名字与右侧文字同一水平线
+  vertical-align: -0.3em;
+  margin-right: 0.25rem;
   // 图还没加载完时留个浅色占位，避免文字跳动
   background-color: rgba(128, 128, 128, 0.15);
 }

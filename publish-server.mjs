@@ -22,7 +22,7 @@ import {
   saveAvatarFile,
   avatarExtFor,
 } from "./lib/site-config.mjs";
-import { listPosts, deletePosts } from "./lib/posts.mjs";
+import { listPosts, deletePosts, readPost, savePost } from "./lib/posts.mjs";
 import { readAboutPage, saveAboutPage } from "./lib/about.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -430,6 +430,47 @@ const server = http.createServer(async (req, res) => {
           drafts: posts.filter((p) => p.draft).length,
           words: posts.reduce((n, p) => n + p.words, 0),
         },
+      });
+    }
+
+    if (pathname === "/api/post" && req.method === "GET") {
+      const file = url.searchParams.get("file") || "";
+      if (!file) return sendJSON(res, 400, { ok: false, error: "缺少 file 参数" });
+      try {
+        const post = await readPost(file);
+        return sendJSON(res, 200, { ok: true, post, categories: await readCategories() });
+      } catch (e) {
+        if (e && e.code === "ENOENT") return sendJSON(res, 404, { ok: false, error: "文件不存在，可能已被删除" });
+        throw e;
+      }
+    }
+
+    if (pathname === "/api/post" && req.method === "POST") {
+      const payload = await readJSON(req);
+      const file = String(payload.file || "").trim();
+      const category = String(payload.category || "").trim();
+      const title = String(payload.title || "").trim();
+      const content = String(payload.content || "");
+      if (!file) return sendJSON(res, 400, { ok: false, error: "缺少 file 参数" });
+      if (!title) return sendJSON(res, 400, { ok: false, error: "标题不能为空" });
+      if (!category) return sendJSON(res, 400, { ok: false, error: "分类不能为空" });
+      if (!content.trim()) return sendJSON(res, 400, { ok: false, error: "正文不能为空" });
+
+      const saved = await savePost({
+        file,
+        category,
+        title,
+        content,
+        tags: Array.isArray(payload.tags) ? payload.tags : [],
+      });
+      const deploy = await deployOrSkip(Boolean(payload.dryRun));
+      return sendJSON(res, deploy.ok ? 200 : 500, {
+        ok: deploy.ok,
+        saved: true,
+        file: saved.file,
+        permalink: saved.permalink,
+        error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
+        deploy,
       });
     }
 

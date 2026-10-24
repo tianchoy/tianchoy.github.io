@@ -31,6 +31,11 @@
 <main class="workspace">
   <section class="pane editor">
     <div class="pane-head">
+      <div class="edit-banner" id="editBanner" hidden>
+        <span class="chip chip-accent">编辑中</span>
+        <span class="edit-file" id="editFile"></span>
+        <a class="edit-back" href="/manage">← 返回文章管理</a>
+      </div>
       <input class="title-input" id="title" type="text" placeholder="文章标题…" autocomplete="off" spellcheck="false">
       <div class="meta-row">
         <div class="field">
@@ -42,6 +47,7 @@
           <input id="tags" type="text" placeholder="vue3, 踩坑记录" autocomplete="off">
         </div>
       </div>
+      <p class="edit-tip" id="editTip" hidden>改标题或分类只更新 frontmatter，文件位置不变，所以线上链接不会变。</p>
     </div>
 
     <div class="editor-toolbar">
@@ -80,7 +86,7 @@ console.log('代码块')
       <span class="hint" id="saveState">草稿自动存在本机</span>
       <button class="btn btn-ghost btn-sm" id="btnDiscard" hidden>丢弃草稿</button>
       <span class="spacer"></span>
-      <span class="hint" title="⌘/Ctrl + Enter 直接发布">⌘↵ 发布</span>
+      <span class="hint" id="kbdHint" title="⌘/Ctrl + Enter 直接发布">⌘↵ 发布</span>
       <label class="switch"><input type="checkbox" id="dryRun">仅存本地</label>
       <button class="btn btn-primary" id="btnPublish">发布</button>
     </div>
@@ -123,6 +129,14 @@ console.log('代码块')
   const DRAFT_KEY = 'wb.draft.v1';
   const NEW_CAT = '__new__';
 
+  // /publish?file=content/posts/xxx.md 进入编辑模式
+  const EDIT_FILE = new URLSearchParams(location.search).get('file') || '';
+  const editing = Boolean(EDIT_FILE);
+  const editBanner = $('editBanner');
+  const editFileEl = $('editFile');
+  const kbdHint = $('kbdHint');
+  let editDate = '';
+
   /* ---------- 分类 ---------- */
 
   async function loadCategories() {
@@ -144,6 +158,7 @@ console.log('代码块')
       add.value = NEW_CAT;
       add.textContent = '＋ 新建分类…';
       catEl.appendChild(add);
+      if (editing) return;
       const draft = readDraft();
       if (draft && draft.category && cats.includes(draft.category)) catEl.value = draft.category;
     } catch (e) {
@@ -247,7 +262,8 @@ console.log('代码块')
     const cat = catEl.value && catEl.value !== NEW_CAT ? catEl.value : '未分类';
     const today = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const date = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+    // 编辑已有文章时预览显示原发布日期，而不是今天
+    const date = editDate || `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
 
     if (!title && !body.trim()) {
       previewEl.innerHTML = '<div class="preview-empty">左侧写下标题和正文，这里会实时预览。</div>';
@@ -276,6 +292,8 @@ console.log('代码块')
 
   let draftTimer = null;
   function saveDraft() {
+    // 编辑已有文章不写草稿，免得和新文章的草稿互相覆盖
+    if (editing) return;
     const data = {
       title: titleEl.value,
       category: catEl.value === NEW_CAT ? '' : catEl.value,
@@ -314,6 +332,7 @@ console.log('代码块')
   }
 
   function restoreDraft() {
+    if (editing) return false;
     const d = readDraft();
     if (!d) return false;
     if (!d.title && !String(d.content || '').trim()) return false;
@@ -353,18 +372,19 @@ console.log('代码块')
     const deploy = payload.deploy || {};
     const log = deploy.output ? `<details><summary class="hint" style="cursor:pointer;margin-top:8px;">部署日志（${deploy.ms || 0} ms）</summary><pre>${esc(deploy.output)}</pre></details>` : '';
     if (ok) {
+      const head = editing ? (deploy.skipped ? '✅ 已保存到本地' : '✅ 已保存并发布') : '✅ 已发布';
       resultEl.innerHTML =
         `<div class="result ok">
-          <div class="result-head">✅ 已发布</div>
+          <div class="result-head">${head}</div>
           <div class="result-line">文件：${esc(payload.file || '')}</div>
           <div class="result-line">线上：<a href="${esc(payload.permalink || '#')}" target="_blank" rel="noopener">${esc(payload.permalink || '')}</a></div>
-          <div class="result-line">${deploy.skipped ? '（仅本地生成，未推送）' : 'GitHub Actions 已触发，通常 30～60 秒后可访问'}</div>
+          <div class="result-line">${deploy.skipped ? '（仅写了本地文件，未推送）' : 'GitHub Actions 已触发，通常 30～60 秒后可访问'}</div>
           ${log}
         </div>`;
     } else {
       resultEl.innerHTML =
         `<div class="result err">
-          <div class="result-head">❌ 没发出去</div>
+          <div class="result-head">❌ ${editing ? '没保存成功' : '没发出去'}</div>
           <div class="result-line">${esc(payload.error || '未知错误')}</div>
           ${payload.file ? `<div class="result-line">文件已生成：${esc(payload.file)}</div>` : ''}
           ${log}
@@ -373,8 +393,13 @@ console.log('代码块')
     document.querySelector('.preview-scroll').scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function readTags() {
+    return (tagsEl.value || '').split(/[,，]/).map((t) => t.trim()).filter(Boolean);
+  }
+
   let publishing = false;
-  async function publish() {
+  // localOnly=true 表示只写本地文件不推送（编辑模式下 ⌘S 用）
+  async function submit(localOnly) {
     if (publishing) return;
     const title = titleEl.value.trim();
     const category = catEl.value === NEW_CAT ? '' : catEl.value;
@@ -387,31 +412,36 @@ console.log('代码块')
     publishing = true;
     const original = publishBtn.textContent;
     publishBtn.disabled = true;
-    publishBtn.textContent = '发布中…';
+    publishBtn.textContent = localOnly ? '保存中…' : editing ? '保存中…' : '发布中…';
     saveDraft();
     const started = Date.now();
 
     try {
-      const data = await api('/api/publish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          category,
-          title,
-          content,
-          tags: (tagsEl.value || '').split(/[,，]/).map((t) => t.trim()).filter(Boolean),
-          dryRun: dryRunEl.checked,
-        }),
-      });
+      const body = { category, title, content, tags: readTags(), dryRun: localOnly || dryRunEl.checked };
+      const data = editing
+        ? await api('/api/post', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(Object.assign({ file: EDIT_FILE }, body)),
+          })
+        : await api('/api/publish', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+          });
       renderResult(true, data);
-      toast(`发布成功 · ${Math.round((Date.now() - started) / 1000)}s`, 'ok');
-      localStorage.removeItem(DRAFT_KEY);
-      discardBtn.hidden = true;
-      saveStateEl.textContent = '已发布，草稿已清空';
+      toast(`${editing ? '已保存' : '发布成功'} · ${Math.round((Date.now() - started) / 1000)}s`, 'ok');
+      if (!editing) {
+        localStorage.removeItem(DRAFT_KEY);
+        discardBtn.hidden = true;
+        saveStateEl.textContent = '已发布，草稿已清空';
+      } else {
+        saveStateEl.textContent = data.deploy && data.deploy.skipped ? '已保存到本地，尚未发布' : '已保存并发布';
+      }
     } catch (e) {
       renderResult(false, Object.assign({ error: e.message }, e.payload || {}));
-      toast('发布失败：' + e.message, 'err', 4200);
-      saveStateEl.textContent = '发布失败，草稿仍保留';
+      toast(`${editing ? '保存' : '发布'}失败：` + e.message, 'err', 4200);
+      saveStateEl.textContent = editing ? '保存失败，改动还在编辑器里' : '发布失败，草稿仍保留';
     } finally {
       publishing = false;
       publishBtn.disabled = false;
@@ -419,24 +449,70 @@ console.log('代码块')
     }
   }
 
-  publishBtn.addEventListener('click', publish);
+  publishBtn.addEventListener('click', () => submit(false));
 
   document.addEventListener('keydown', (e) => {
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    const mod = e.metaKey || e.ctrlKey;
+    if (mod && e.key === 'Enter') {
       e.preventDefault();
-      publish();
+      submit(false);
     }
-    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+    if (mod && e.key.toLowerCase() === 's') {
       e.preventDefault();
-      saveDraft();
-      toast('草稿已保存到本机');
+      if (editing) submit(true);
+      else {
+        saveDraft();
+        toast('草稿已保存到本机');
+      }
     }
   });
+
+  /* ---------- 编辑模式 ---------- */
+
+  async function loadForEdit() {
+    document.title = '编辑文章 · 写作台';
+    editBanner.hidden = false;
+    $('editTip').hidden = false;
+    editFileEl.textContent = EDIT_FILE.replace(/^content\/posts\//, '');
+    editFileEl.title = EDIT_FILE;
+    publishBtn.textContent = '保存修改';
+    kbdHint.textContent = '⌘↵ 保存';
+    kbdHint.title = '⌘/Ctrl + Enter 保存并发布，⌘/Ctrl + S 只写本地文件';
+    saveStateEl.textContent = '读取中…';
+    try {
+      const data = await api('/api/post?file=' + encodeURIComponent(EDIT_FILE));
+      const p = data.post || {};
+      titleEl.value = p.title || '';
+      contentEl.value = p.content || '';
+      tagsEl.value = (p.tags || []).join(', ');
+      // 文章分类可能是手写在 frontmatter 里的，不在目录列表里就补一个选项
+      const cat = (p.categories || [])[0] || '';
+      if (cat && ![...catEl.options].some((o) => o.value === cat)) {
+        const o = document.createElement('option');
+        o.value = cat;
+        o.textContent = cat;
+        catEl.insertBefore(o, catEl.lastElementChild);
+      }
+      catEl.value = cat;
+      editDate = (p.date || '').slice(0, 10);
+      saveStateEl.textContent = p.draft ? '这是一篇草稿' : '已载入，可修改后保存';
+      onInput();
+      (titleEl.value ? contentEl : titleEl).focus({ preventScroll: true });
+      contentEl.scrollTop = 0;
+    } catch (e) {
+      toast('读取文章失败：' + e.message, 'err', 5000);
+      saveStateEl.textContent = '读取失败，检查文件是否还在';
+    }
+  }
 
   /* ---------- 启动 ---------- */
 
   (async function boot() {
     await loadCategories();
+    if (editing) {
+      await loadForEdit();
+      return;
+    }
     const restored = restoreDraft();
     onInput();
     if (restored) toast('已恢复上次未发布的草稿');

@@ -193,11 +193,21 @@ async function readCategories() {
       } else if (e.name.endsWith(".md")) {
         try {
           const txt = await fsp.readFile(p, "utf-8");
+          // 内联数组：categories: [a, b]
           const m = txt.match(/categories:\s*\[([^\]]*)\]/);
           if (m) {
             for (const part of m[1].split(",")) {
               const c = part.trim().replace(/^["']|["']$/g, "");
               if (c) cats.add(c);
+            }
+          } else {
+            // 块状列表：categories:\n  - a\n  - b（手改过的文章可能是这种写法）
+            const b = txt.match(/categories:\s*\r?\n((?:\s*-\s+.+\r?\n?)+)/);
+            if (b) {
+              for (const line of b[1].split(/\r?\n/)) {
+                const c = line.replace(/^\s*-\s+/, "").trim().replace(/^["']|["']$/g, "");
+                if (c) cats.add(c);
+              }
             }
           }
         } catch {
@@ -210,13 +220,17 @@ async function readCategories() {
   return [...cats].sort((a, b) => a.localeCompare(b, "zh"));
 }
 
-// 标签统一去重、去空白，并限制数量：标签太多详情页会挤成一片
+// 标签统一去重、去空白，并限制数量：标签太多详情页会挤成一片。
+// 去重按小写比：vue3 和 Vue3 在 Hugo 里是同一个 term，留两个会让标签页出现重复项
 function cleanTags(tags, max = 8) {
   const out = [];
+  const seen = new Set();
   for (const raw of Array.isArray(tags) ? tags : []) {
     const t = String(raw == null ? "" : raw).replace(/[\r\n\t]/g, " ").trim();
     if (!t || t.length > 24) continue;
-    if (out.includes(t)) continue;
+    const k = t.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
     out.push(t);
     if (out.length >= max) break;
   }

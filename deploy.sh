@@ -21,6 +21,11 @@ git diff --cached --quiet || git commit -m "blog update: $(date '+%Y-%m-%d %H:%M
 # 自动 rebase 再推一次，省得回来手动处理
 if ! git push origin main; then
   echo "推送被拒，先同步远端再重试…" >&2
-  git pull --rebase --autostash origin main
+  if ! git pull --rebase --autostash origin main; then
+    # rebase 冲突时仓库会停在中间态，之后每次发布都会失败，先退干净再说
+    git rebase --abort 2>/dev/null || true
+    echo "同步远端失败（可能有冲突）：请手动运行 git pull --rebase origin main 处理后再发布。" >&2
+    exit 1
+  fi
   git push origin main
 fi

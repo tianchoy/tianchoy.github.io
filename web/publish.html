@@ -415,7 +415,7 @@ console.log('代码块')
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, content, category, existing: tags }),
       });
-      const add = (data.tags || []).filter((t) => t && !tags.includes(t));
+      const add = (data.tags || []).filter((t) => t && !tags.some((x) => x.toLowerCase() === t.toLowerCase()));
       if (!add.length) return tags;
       const next = tags.concat(add);
       tagsEl.value = next.join(', ');

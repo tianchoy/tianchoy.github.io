@@ -57,6 +57,19 @@
                         {{- dict "Categories" . | T "includedInCategories" | safeHTML -}}
                     </span>
                 {{- end -}}
+
+                {{- /* 标签紧跟在「收录于 X」后面，不再是页脚单独一行 */ -}}
+                {{- with .Params.tags -}}
+                    &nbsp;<span class="post-meta-tags">
+                        <i class="fas fa-tags fa-fw" aria-hidden="true"></i>&nbsp;
+                        {{- range $index, $value := . -}}
+                            {{- if gt $index 0 }},&nbsp;{{ end -}}
+                            {{- with partialCached "function/path.html" $value $value | printf "/tags/%v" | $.Site.GetPage -}}
+                                <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+                            {{- end -}}
+                        {{- end -}}
+                    </span>
+                {{- end -}}
             </div>
             <div class="post-meta-line">
                 {{- with .Site.Params.dateformat | default "2006-01-02" | .PublishDate.Format -}}

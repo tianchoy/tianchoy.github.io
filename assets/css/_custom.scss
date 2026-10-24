@@ -216,11 +216,24 @@ body[theme="dark"] {
   background-color: rgba(128, 128, 128, 0.15);
 }
 
-// 标签链接沿用文章内链接色：主题只给了继承色（近黑），和左边「收录于」的蓝不一致
-.post-tags a {
-  color: $single-link-color;
+// 标签从页脚挪到标题下方：跟着「收录于 X」在同一行流式换行
+// 选择器要压过主题的 `.single .post-meta span { display: inline-block }`（0,2,1）
+.single .post-meta .post-meta-tags {
+  // 主题给 .post-meta span 设了 inline-block，这里要行内流式，标签多了才好换行
+  display: inline;
+  max-width: none;
+  font-size: inherit;
 
-  &:hover {
-    opacity: 0.8;
+  i {
+    font-size: 0.9em;
+  }
+
+  // 主题只给了继承色（近黑），和左边「收录于」的蓝不一致
+  a {
+    color: $single-link-color;
+
+    &:hover {
+      opacity: 0.8;
+    }
   }
 }

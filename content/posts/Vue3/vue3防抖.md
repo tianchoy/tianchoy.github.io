@@ -2,7 +2,7 @@
 title: "vue3防抖"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vue3", "防抖", "性能优化", "工具函数", "JavaScript"]
+tags: ["Vue3", "前端", "组件", "踩坑", "笔记"]
 draft: false
 ---
 

@@ -2,7 +2,7 @@
 title: "vue3+TS+Element-plus el-pagination分页组件显示中文"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vue3", "Element Plus", "TypeScript", "国际化", "分页"]
+tags: ["Vue3", "TypeScript", "组件", "表格", "前端"]
 draft: false
 ---
 

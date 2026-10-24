@@ -2,7 +2,7 @@
 title: "vben admin pro 框架的BasicTable之 使用slots 插入组件"
 date: 2026-02-02T22:27:31+08:00
 categories: ["Vue3"]
-tags: ["Vben Admin", "Vue3", "表格", "插槽", "组件"]
+tags: ["Vue3", "表格", "组件", "教程", "前端"]
 draft: false
 ---
 

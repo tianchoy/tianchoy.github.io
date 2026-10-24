@@ -2,7 +2,7 @@
 title: "关于那首 《silent day》"
 date: 2025-11-04T14:59:00+08:00
 categories: ["diary"]
-tags: ["音乐", "青春", "乐队", "吉他", "回忆"]
+tags: ["音乐", "青春", "回忆", "散文", "朋友"]
 draft: false
 ---
 

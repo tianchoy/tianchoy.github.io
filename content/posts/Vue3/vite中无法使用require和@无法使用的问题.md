@@ -2,7 +2,7 @@
 title: "vite中无法使用require和@无法使用的问题"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vite", "Vue3", "模块规范", "路径别名", "踩坑"]
+tags: ["Vue3", "构建工具", "踩坑", "前端", "笔记"]
 draft: false
 ---
 

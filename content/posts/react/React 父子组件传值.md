@@ -2,7 +2,7 @@
 title: "React 父子组件传值"
 date: 2025-04-15T16:41:16+08:00
 categories: ["react"]
-tags: ["React", "组件通信", "Props", "Hooks", "基础"]
+tags: ["React", "组件", "前端", "教程", "构建工具"]
 draft: false
 ---
 

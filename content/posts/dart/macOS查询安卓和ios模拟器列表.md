@@ -2,7 +2,7 @@
 title: "macOS查询安卓和ios模拟器列表"
 date: 2025-06-28T20:53:38+08:00
 categories: ["dart"]
-tags: ["Flutter", "模拟器", "Mac", "命令行", "开发环境"]
+tags: ["Mac", "Flutter", "开发环境", "命令行", "跨端开发"]
 draft: false
 ---
 

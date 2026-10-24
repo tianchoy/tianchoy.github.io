@@ -2,7 +2,7 @@
 title: "uniappx开发app修改密码验证功能"
 date: 2025-07-08T22:07:07+08:00
 categories: ["python"]
-tags: ["跨端开发", "表单验证", "密码", "UTS", "App开发"]
+tags: ["跨端开发", "前端", "组件", "踩坑", "TypeScript"]
 draft: false
 ---
 

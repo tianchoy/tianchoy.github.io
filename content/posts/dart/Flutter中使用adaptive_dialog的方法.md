@@ -2,7 +2,7 @@
 title: "Flutter中使用adaptive_dialog的方法"
 date: 2025-06-26T22:02:15+08:00
 categories: ["dart"]
-tags: ["Flutter", "跨平台", "对话框", "插件", "教程"]
+tags: ["Flutter", "组件", "跨端开发", "教程", "前端"]
 draft: false
 ---
 

@@ -2,7 +2,7 @@
 title: "vue3兄弟之间传值之插件mitt"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vue3", "第三方库", "事件总线", "组件通信", "插件"]
+tags: ["Vue3", "组件", "教程", "前端", "构建工具"]
 draft: false
 ---
 

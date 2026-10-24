@@ -2,7 +2,7 @@
 title: "miot-plugin-sdk 使用echart图表插件"
 date: 2024-10-20T11:42:58+08:00
 categories: ["单片机"]
-tags: ["米家", "ECharts", "图表", "插件", "React Native"]
+tags: ["物联网", "表格", "组件", "跨端开发", "教程"]
 draft: false
 ---
 

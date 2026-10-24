@@ -2,7 +2,7 @@
 title: "miot-plugin-sdk-npminstall安装失败"
 date: 2024-10-20T11:42:58+08:00
 categories: ["单片机"]
-tags: ["米家", "米家插件", "依赖管理", "踩坑", "智能家居"]
+tags: ["物联网", "构建工具", "踩坑", "开发环境", "笔记"]
 draft: false
 ---
 

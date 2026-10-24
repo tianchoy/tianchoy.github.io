@@ -2,7 +2,7 @@
 title: "vue3+ts用ref获取元素节点里的值"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vue3", "TypeScript", "模板引用", "DOM", "笔记"]
+tags: ["Vue3", "TypeScript", "前端", "组件", "教程"]
 draft: false
 ---
 

@@ -2,7 +2,7 @@
 title: "gitcode代码同时更新到github"
 date: 2026-05-23T22:09:11+08:00
 categories: ["单片机"]
-tags: ["Git", "GitCode", "GitHub", "远程仓库", "同步"]
+tags: ["Git", "开发环境", "踩坑", "命令行", "笔记"]
 draft: false
 ---
 

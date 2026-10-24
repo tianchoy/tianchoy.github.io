@@ -2,7 +2,7 @@
 title: "react 封装一个类函数使用方法"
 date: 2025-01-21T14:25:11+08:00
 categories: ["react"]
-tags: ["React", "TypeScript", "类", "工具函数", "封装"]
+tags: ["React", "TypeScript", "组件", "教程", "前端"]
 draft: false
 ---
 

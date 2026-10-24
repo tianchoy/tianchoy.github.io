@@ -2,7 +2,7 @@
 title: "app端渐变背景"
 date: 2026-09-03T21:48:35+08:00
 categories: ["Vue3"]
-tags: ["跨端开发", "CSS", "渐变", "App开发", "样式"]
+tags: ["跨端开发", "前端", "组件", "踩坑", "Vue3"]
 draft: false
 ---
 

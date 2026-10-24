@@ -2,7 +2,7 @@
 title: "DataTable开发导出Excel文档带背景颜色"
 date: 2024-10-20T11:42:58+08:00
 categories: ["Vue3"]
-tags: ["Vue3", "Excel导出", "前端库", "表格", "踩坑"]
+tags: ["Vue3", "表格", "组件", "踩坑", "前端"]
 draft: false
 ---
 

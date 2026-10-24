@@ -2,7 +2,7 @@
 title: "test"
 date: 2024-10-20T11:42:58+08:00
 categories: ["diary"]
-tags: ["随笔", "人生感悟", "摘抄", "生活", "短句"]
+tags: ["随笔", "生活", "人生", "自我", "时间"]
 draft: false
 ---
 

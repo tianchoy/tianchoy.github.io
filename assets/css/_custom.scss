@@ -565,3 +565,37 @@ body[theme="dark"] {
     display: none;
   }
 }
+
+// ==============================
+// 关于页正文的行内链接
+// 主题的链接配色只写在 .single .content a 上，关于页正文用的是 .about-content，
+// 不单独补这一段，链接就会跟着全局 a{color:inherit} 走，跟正文同色、看不出可点。
+// 颜色沿用文章正文那套取值，保持全站一致。
+// ==============================
+.about-page .about-content {
+  a {
+    color: $single-link-color;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-decoration-color: rgba(45, 150, 189, .4);
+    text-underline-offset: .18em;
+    transition: color .2s, text-decoration-color .2s;
+
+    &:hover {
+      color: $single-link-hover-color;
+      text-decoration-color: currentColor;
+    }
+  }
+}
+
+[theme=dark] {
+  .about-page .about-content a {
+    color: $single-link-color-dark;
+    text-decoration-color: rgba(85, 189, 226, .4);
+
+    &:hover {
+      color: $single-link-hover-color-dark;
+      text-decoration-color: currentColor;
+    }
+  }
+}

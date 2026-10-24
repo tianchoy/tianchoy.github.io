@@ -1,0 +1,9 @@
+{{- /* 覆写主题的链接渲染钩子：主题的 plugin/link.html 末尾带一个换行，
+       渲染后会在 </a> 和后面的标点之间留下一个空格（"Essay ."），
+       这里把 partial 的返回值 TrimSpace 掉。 */ -}}
+{{- $destination := .Destination -}}
+{{- with dict "Path" $destination "Resources" .Page.Resources | partial "function/resource.html" -}}
+    {{- $destination = .RelPermalink -}}
+{{- end -}}
+{{- $options := dict "Destination" $destination "Title" .Title "Content" .Text -}}
+{{- (strings.TrimSpace (partial "plugin/link.html" $options)) | safeHTML -}}

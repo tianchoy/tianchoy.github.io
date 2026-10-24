@@ -75,6 +75,18 @@ body {
 a { color: var(--accent-text); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
+/* 文章预览里的行内链接用站点正文的链接色，否则预览是强调色、线上是正文色，
+   看起来像"预览有颜色、线上没颜色" */
+.article-body a {
+  color: #2d96bd;
+  text-decoration: underline;
+  text-decoration-color: rgba(45, 150, 189, 0.4);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.article-body a:hover { color: #ef3982; text-decoration-color: currentColor; }
+
 /* ---------- 顶栏 ---------- */
 
 .topbar {

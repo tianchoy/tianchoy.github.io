@@ -43,8 +43,8 @@
           <select id="category"><option value="">加载中…</option></select>
         </div>
         <div class="field">
-          <label for="tags">标签（逗号分隔，可留空）</label>
-          <input id="tags" type="text" placeholder="vue3, 踩坑记录" autocomplete="off">
+          <label for="tags">标签（逗号分隔，留空会自动提取）</label>
+          <input id="tags" type="text" placeholder="留空或不足 5 个，发布时自动补齐" autocomplete="off">
         </div>
       </div>
       <p class="edit-tip" id="editTip" hidden>改标题或分类只更新 frontmatter，文件位置不变，所以线上链接不会变。</p>
@@ -397,6 +397,30 @@ console.log('代码块')
     return (tagsEl.value || '').split(/[,，]/).map((t) => t.trim()).filter(Boolean);
   }
 
+  // 发布前补齐标签：够 5 个原样返回；不够就按标题/正文/分类让服务端算，并写回输入框
+  async function fillTags(title, category, content) {
+    const tags = readTags();
+    if (tags.length >= 5) return tags;
+    try {
+      const data = await api('/api/suggest-tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, content, category, existing: tags }),
+      });
+      const add = (data.tags || []).filter((t) => t && !tags.includes(t));
+      if (!add.length) return tags;
+      const next = tags.concat(add);
+      tagsEl.value = next.join(', ');
+      updatePreview();
+      saveDraft();
+      toast(tags.length ? `已补充 ${add.length} 个标签` : `已自动提取 ${add.length} 个标签`);
+      return next;
+    } catch (e) {
+      // 补标签失败不该挡住发布，按原样提交
+      return tags;
+    }
+  }
+
   let publishing = false;
   // localOnly=true 表示只写本地文件不推送（编辑模式下 ⌘S 用）
   async function submit(localOnly) {
@@ -417,7 +441,9 @@ console.log('代码块')
     const started = Date.now();
 
     try {
-      const body = { category, title, content, tags: readTags(), dryRun: localOnly || dryRunEl.checked };
+      // 标签不足 5 个时先补齐，用户能在标签框里看到补上了什么
+      const tags = await fillTags(title, category, content);
+      const body = { category, title, content, tags, dryRun: localOnly || dryRunEl.checked };
       const data = editing
         ? await api('/api/post', {
             method: 'POST',

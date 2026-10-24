@@ -24,6 +24,7 @@ import {
 } from "./lib/site-config.mjs";
 import { listPosts, deletePosts, readPost, savePost } from "./lib/posts.mjs";
 import { readAboutPage, saveAboutPage } from "./lib/about.mjs";
+import { suggestTags } from "./lib/auto-tags.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(ROOT, "public");
@@ -384,6 +385,19 @@ const server = http.createServer(async (req, res) => {
       const buf = await readBody(req, 13 * 1024 * 1024);
       const { avatarURL, file } = await saveAvatarFile(buf, type);
       return sendJSON(res, 200, { ok: true, avatarURL, file });
+    }
+
+    // 发布前给标签框补位：不足 5 个时按标题/正文/分类算出建议
+    if (pathname === "/api/suggest-tags" && req.method === "POST") {
+      const payload = await readJSON(req);
+      const tags = suggestTags({
+        title: payload.title,
+        content: payload.content,
+        category: payload.category,
+        existing: Array.isArray(payload.existing) ? payload.existing : [],
+        need: 5,
+      });
+      return sendJSON(res, 200, { ok: true, tags });
     }
 
     if (pathname === "/api/publish" && req.method === "POST") {

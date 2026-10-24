@@ -201,6 +201,11 @@ summaryLength = 30
     url = "/categories/"
   [[menu.main]]
     weight = 4
+    identifier = "tags"
+    name = "标签"
+    url = "/tags/"
+  [[menu.main]]
+    weight = 5
     identifier = "about"
     name = "关于"
     url = "/about/"

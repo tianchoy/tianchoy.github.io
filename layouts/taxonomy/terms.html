@@ -1,0 +1,176 @@
+{{- define "title" -}}
+    {{- .Params.Title | default (T .Data.Plural) | default .Data.Plural | dict "Some" | T "allSome" }} - {{ .Site.Title -}}
+{{- end -}}
+
+{{- define "content" -}}
+    {{- $taxonomies := .Data.Plural -}}
+    {{- $terms := .Data.Terms.ByCount -}}
+    {{- $type := .Type -}}
+
+    {{- /* 标签页：按 data/tagGroups.yaml 分组 + 按文章数分档 + 实时筛选 */ -}}
+    {{- if eq $taxonomies "tags" -}}
+        {{- $postCount := len (where .Site.RegularPages "Section" "posts") -}}
+        {{- $known := slice -}}
+        {{- range site.Data.tagGroups -}}
+            {{- $known = union $known .tags -}}
+        {{- end -}}
+
+        <div class="tag-page">
+            <div class="tag-hero">
+                <p class="tag-hero-kicker">Tags</p>
+                <h1 class="tag-hero-title">所有标签</h1>
+                <p class="tag-hero-meta">{{ len $terms }} 个标签 · {{ $postCount }} 篇文章 · 字号越大挂的文章越多</p>
+                <div class="tag-search">
+                    <i class="fas fa-search" aria-hidden="true"></i>
+                    <input id="tagSearch" type="search" placeholder="搜索标签，比如 Vue3、回忆" autocomplete="off" spellcheck="false" aria-label="搜索标签">
+                    <button id="tagSearchClear" type="button" hidden>清空</button>
+                </div>
+            </div>
+
+            {{- range site.Data.tagGroups -}}
+                {{- $group := . -}}
+                {{- $items := slice -}}
+                {{- range $terms -}}
+                    {{- if in $group.tags .Page.Title -}}
+                        {{- $items = $items | append . -}}
+                    {{- end -}}
+                {{- end -}}
+                {{- with $items -}}
+                <section class="tag-group">
+                    <div class="tag-group-head">
+                        <h2 class="tag-group-title">{{ $group.name }}</h2>
+                        <span class="tag-group-desc">{{ $group.desc }}</span>
+                        <span class="tag-group-count">{{ len . }} 个</span>
+                    </div>
+                    <div class="tag-cloud">
+                        {{- range . -}}
+                            {{- $tier := "t4" -}}
+                            {{- if ge .Count 15 -}}{{- $tier = "t1" -}}{{- else if ge .Count 8 -}}{{- $tier = "t2" -}}{{- else if ge .Count 4 -}}{{- $tier = "t3" -}}{{- end -}}
+                            <a class="tag-pill {{ $tier }}" href="{{ .Page.RelPermalink }}" data-tag="{{ .Page.Title }}">
+                                <span class="tag-pill-name">{{ .Page.Title }}</span>
+                                <span class="tag-pill-count">{{ .Count }}</span>
+                            </a>
+                        {{- end -}}
+                    </div>
+                </section>
+                {{- end -}}
+            {{- end -}}
+
+            {{- /* 新加的标签还没写进 tagGroups.yaml 时，兜在这里，不至于从页面上消失 */ -}}
+            {{- $extra := slice -}}
+            {{- range $terms -}}
+                {{- if not (in $known .Page.Title) -}}
+                    {{- $extra = $extra | append . -}}
+                {{- end -}}
+            {{- end -}}
+            {{- with $extra -}}
+            <section class="tag-group">
+                <div class="tag-group-head">
+                    <h2 class="tag-group-title">其他</h2>
+                    <span class="tag-group-desc">还没归类的标签</span>
+                    <span class="tag-group-count">{{ len . }} 个</span>
+                </div>
+                <div class="tag-cloud">
+                    {{- range . -}}
+                    <a class="tag-pill t4" href="{{ .Page.RelPermalink }}" data-tag="{{ .Page.Title }}">
+                        <span class="tag-pill-name">{{ .Page.Title }}</span>
+                        <span class="tag-pill-count">{{ .Count }}</span>
+                    </a>
+                    {{- end -}}
+                </div>
+            </section>
+            {{- end -}}
+
+            <p class="tag-empty" id="tagEmpty" hidden>没有匹配的标签，换个词试试。</p>
+
+            <div class="tag-foot">
+                <a href="{{ "/posts/" | relURL }}">全部文章</a>
+                <span>·</span>
+                <a href="{{ "/categories/" | relURL }}">按分类浏览</a>
+            </div>
+        </div>
+
+        <script>
+        (function () {
+            var input = document.getElementById('tagSearch');
+            var clearBtn = document.getElementById('tagSearchClear');
+            var empty = document.getElementById('tagEmpty');
+            if (!input) return;
+            var groups = Array.prototype.slice.call(document.querySelectorAll('.tag-group'));
+            var pills = Array.prototype.slice.call(document.querySelectorAll('.tag-pill'));
+
+            function apply() {
+                var q = input.value.trim().toLowerCase();
+                clearBtn.hidden = !q;
+                var shown = 0;
+                pills.forEach(function (pill) {
+                    var name = (pill.getAttribute('data-tag') || '').toLowerCase();
+                    var hit = !q || name.indexOf(q) > -1;
+                    pill.hidden = !hit;
+                    if (hit) shown++;
+                });
+                groups.forEach(function (group) {
+                    var any = Array.prototype.slice.call(group.querySelectorAll('.tag-pill')).some(function (pill) {
+                        return !pill.hidden;
+                    });
+                    group.hidden = !any;
+                });
+                empty.hidden = shown > 0;
+            }
+
+            input.addEventListener('input', apply);
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    input.value = '';
+                    apply();
+                }
+            });
+            clearBtn.addEventListener('click', function () {
+                input.value = '';
+                apply();
+                input.focus();
+            });
+        })();
+        </script>
+
+    {{- /* 分类页：保持主题原有卡片布局 */ -}}
+    {{- else -}}
+    <div class="page archive">
+        <h2 class="single-title animate__animated animate__pulse animate__faster">
+            {{- .Params.Title | default (T $taxonomies) | default $taxonomies | dict "Some" | T "allSome" -}}
+        </h2>
+
+        {{- if eq $taxonomies "categories" -}}
+            <div class="categories-card">
+                {{- range $terms -}}
+                    {{- $term := .Term -}}
+                    {{- $pages := .Pages -}}
+                    {{- with $.Site.GetPage "taxonomy" (printf "%v/%v" $type $term) -}}
+                    <div class="card-item">
+                        <div class="card-item-wrapper">
+                            <h3 class="card-item-title">
+                                <a href="{{ .RelPermalink }}">
+                                    <i class="far fa-folder fa-fw" aria-hidden="true"></i>&nbsp;{{ .Page.Title }}
+                                </a>
+                            </h3>
+                            {{- range first 5 $pages -}}
+                                <article class="archive-item">
+                                    <a href="{{ .RelPermalink }}" class="archive-item-link">
+                                        {{- .Title -}}
+                                    </a>
+                                </article>
+                            {{- end -}}
+                            {{- if gt (len $pages) 5 -}}
+                                <span class="more-post">
+                                    <a href="{{ .RelPermalink }}" class="more-single-link">{{ T "more" }} >></a>
+                                </span>
+                            {{- end -}}
+                        </div>
+                    </div>
+                    {{- end -}}
+                {{- end -}}
+            </div>
+        {{- end -}}
+    </div>
+    {{- end -}}
+{{- end -}}

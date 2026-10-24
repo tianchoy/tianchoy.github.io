@@ -156,7 +156,7 @@
               <span class="num">${esc(p.file.replace(/^content\/posts\//, ''))}${tags}</span>${p.draft ? '<span class="badge-draft">草稿</span>' : ''}
             </td>
             <td class="col-cat">${cats}</td>
-            <td class="num col-date">${esc(p.date)}</td>
+            <td class="num col-date">${esc(p.date)}${p.time ? `<span class="t-time">${esc(p.time)}</span>` : ''}</td>
             <td class="num col-words">${fmtWords(p.words)}</td>
             <td class="num col-size">${fmtSize(p.size)}</td>
             <td class="t-act">

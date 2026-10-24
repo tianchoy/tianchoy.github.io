@@ -782,6 +782,8 @@ select { appearance: none; background-image: none; cursor: pointer; }
 .post-table .t-title .num { display: block; margin-top: 3px; font-size: 11.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .post-table .num { color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; font-size: 12.5px; }
 .post-table .t-act { text-align: right; white-space: nowrap; }
+/* 日期列里的时分秒：比日期本身再淡一号，整列才不会看着糊成一片 */
+.post-table .col-date .t-time { margin-left: 6px; font-size: 11.5px; opacity: .72; }
 
 .badge-draft {
   display: inline-block; margin-left: 6px; padding: 0 6px; border-radius: 999px;

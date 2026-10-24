@@ -72,8 +72,12 @@
                 {{- end -}}
             </div>
             <div class="post-meta-line">
-                {{- with .Site.Params.dateformat | default "2006-01-02" | .PublishDate.Format -}}
-                    <i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="{{ . }}">{{ . }}</time>&nbsp;
+                {{- /* 发布日期带时分秒：沿用 params.dateformat 的日期部分，再补上 15:04:05。
+                       只改文章页——列表页与搜索索引仍用 params.dateFormat 显示纯日期，那里带时间太挤。 */ -}}
+                {{- $df := .Site.Params.dateformat | default "2006-01-02" -}}
+                {{- if not (findRE "(15|03)" $df) }}{{ $df = printf "%s 15:04:05" $df }}{{ end -}}
+                {{- with $df | .PublishDate.Format -}}
+                    <i class="far fa-calendar-alt fa-fw" aria-hidden="true"></i>&nbsp;<time datetime="{{ $.PublishDate.Format "2006-01-02T15:04:05-07:00" }}">{{ . }}</time>&nbsp;
                 {{- end -}}
                 <i class="fas fa-pencil-alt fa-fw" aria-hidden="true"></i>&nbsp;{{ T "wordCount" .WordCount }}&nbsp;
                 <i class="far fa-clock fa-fw" aria-hidden="true"></i>&nbsp;{{ T "readingTime" .ReadingTime }}&nbsp;

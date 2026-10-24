@@ -528,7 +528,8 @@ console.log('代码块')
         catEl.insertBefore(o, catEl.lastElementChild);
       }
       catEl.value = cat;
-      editDate = (p.date || '').slice(0, 10);
+      // 线上文章页显示到秒，预览跟着显示到秒（没有时间的旧文章自然只剩日期）
+      editDate = (p.date || '').slice(0, 19).replace('T', ' ');
       saveStateEl.textContent = p.draft ? '这是一篇草稿' : '已载入，可修改后保存';
       onInput();
       (titleEl.value ? contentEl : titleEl).focus({ preventScroll: true });

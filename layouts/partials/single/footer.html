@@ -5,7 +5,10 @@
         <div class="post-info-line">
             <div class="post-info-mod">
                 <span>
-                    {{- with .Site.Params.dateformat | default "2006-01-02" | .Lastmod.Format -}}
+                    {{- /* 与标题下的发布日期保持一致：日期部分沿用 params.dateformat，再补 15:04:05 */ -}}
+                    {{- $df := .Site.Params.dateformat | default "2006-01-02" -}}
+                    {{- if not (findRE "(15|03)" $df) }}{{ $df = printf "%s 15:04:05" $df }}{{ end -}}
+                    {{- with $df | .Lastmod.Format -}}
                         {{- dict "Date" . | T "updatedOnDate" -}}
                         {{- if $.Site.Params.gitRepo -}}
                             {{- with $.GitInfo -}}

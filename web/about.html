@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>关于页 · 写作台</title>
+<link rel="stylesheet" href="/ui/ui.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/publish">
+      <span class="brand-mark">写</span>
+      <span class="brand-text">写作台<em>特严赤傲</em></span>
+    </a>
+    <nav class="nav">
+      <a class="nav-link" data-page="publish" href="/publish">写文章</a>
+      <a class="nav-link" data-page="manage" href="/manage">文章管理</a>
+      <a class="nav-link" data-page="about" href="/edit/about">关于页</a>
+      <a class="nav-link" data-page="admin" href="/admin">站点设置</a>
+      <a class="nav-link" href="/" target="_blank">预览站点 ↗</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="status-chip">本地服务运行中</span>
+      <button class="btn btn-ghost btn-sm" id="btnShutdown">关闭服务</button>
+    </div>
+  </div>
+</header>
+
+<main class="workspace">
+  <section class="pane editor">
+    <div class="pane-head">
+      <input class="title-input" id="title" type="text" placeholder="关于页标题…" autocomplete="off" spellcheck="false">
+      <div class="hint" id="desc" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="editor-toolbar">
+      <button class="tool-btn" data-wrap="## " data-line="1" title="二级标题">H2</button>
+      <button class="tool-btn" data-wrap="### " data-line="1" title="三级标题">H3</button>
+      <span class="tool-sep"></span>
+      <button class="tool-btn" data-wrap="**" title="加粗"><b>B</b></button>
+      <button class="tool-btn" data-wrap="*" title="斜体"><i>I</i></button>
+      <button class="tool-btn" data-wrap="`" title="行内代码">&lt;/&gt;</button>
+      <span class="tool-sep"></span>
+      <button class="tool-btn" data-wrap="> " data-line="1" title="引用">❝</button>
+      <button class="tool-btn" data-wrap="- " data-line="1" title="列表">≡</button>
+      <span class="tool-sep"></span>
+      <button class="tool-btn" id="tb-link" title="插入链接">链接</button>
+      <button class="tool-btn" id="tb-image" title="插入图片">图片</button>
+    </div>
+
+    <div class="editor-body">
+      <textarea id="content" placeholder="关于页正文，支持 Markdown…
+
+段落之间空一行。
+- 列表项
+- 列表项
+
+[链接](https://example.com)"></textarea>
+    </div>
+
+    <div class="pane-foot">
+      <span id="wordcount">0 字</span>
+      <span class="hint" id="saveState">读取中…</span>
+      <button class="btn btn-ghost btn-sm" id="btnRevert" hidden>撤销改动</button>
+      <span class="spacer"></span>
+      <span class="hint">⌘↵ 保存</span>
+      <label class="switch"><input type="checkbox" id="dryRun">仅存本地</label>
+      <button class="btn btn-primary" id="btnSave">保存并发布</button>
+    </div>
+  </section>
+
+  <aside class="pane preview">
+    <div class="pane-head" style="flex-direction:row;align-items:center;gap:8px;padding:11px 16px;">
+      <span class="card-title">预览</span>
+      <span class="chip chip-accent">实时</span>
+      <span class="hint" style="margin-left:auto;">近似 /about/ 线上效果</span>
+    </div>
+    <div class="preview-scroll">
+      <div id="result"></div>
+      <article class="article" id="preview">
+        <div class="preview-empty">读取中…</div>
+      </article>
+    </div>
+  </aside>
+</main>
+
+<script src="/ui/ui.js"></script>
+<script>
+(function () {
+  const { api, toast, renderMarkdown, countWords, esc, initTopbar } = window.WB;
+  initTopbar();
+
+  const $ = (id) => document.getElementById(id);
+  const titleEl = $('title');
+  const descEl = $('desc');
+  const contentEl = $('content');
+  const previewEl = $('preview');
+  const resultEl = $('result');
+  const wordEl = $('wordcount');
+  const stateEl = $('saveState');
+  const revertBtn = $('btnRevert');
+  const saveBtn = $('btnSave');
+  const dryRunEl = $('dryRun');
+
+  // 服务器上的当前版本，用来判断"有没有改过"以及撤销
+  const server = { title: '', body: '', description: '', avatar: '/images/profile.jpg' };
+
+  function updatePreview() {
+    const title = titleEl.value.trim();
+    const body = contentEl.value;
+    if (!title && !body.trim()) {
+      previewEl.innerHTML = '<div class="preview-empty">标题和正文都是空的，线上会是一片空白。</div>';
+      return;
+    }
+    previewEl.innerHTML =
+      `<div class="about-preview-head">` +
+      `<img src="${esc(server.avatar)}" alt="${esc(server.title)}">` +
+      `<h1 class="article-title">${esc(server.title || title || '关于')}</h1>` +
+      `</div>` +
+      `<div class="article-body">${renderMarkdown(body) || '<p class="preview-empty">（正文为空）</p>'}</div>`;
+  }
+
+  function updateCount() {
+    const { chars, words } = countWords(contentEl.value);
+    wordEl.textContent = `${words} 字 · ${chars} 字符`;
+  }
+
+  function isDirty() {
+    return titleEl.value.trim() !== server.title || contentEl.value.replace(/\r\n/g, '\n').trim() !== server.body;
+  }
+
+  function markState() {
+    if (!isDirty()) {
+      stateEl.textContent = '已从 content/about.md 读取';
+      revertBtn.hidden = true;
+      return;
+    }
+    stateEl.textContent = '有未保存的改动';
+    revertBtn.hidden = false;
+  }
+
+  function onInput() {
+    updatePreview();
+    updateCount();
+    markState();
+  }
+
+  function applyServer(data) {
+    server.title = data.title || '';
+    server.body = data.body || '';
+    if (data.description !== undefined) server.description = data.description;
+    titleEl.value = server.title;
+    descEl.textContent = server.description
+      ? `页面描述（SEO，改它请到站点设置）：${server.description}`
+      : '';
+    contentEl.value = server.body;
+    onInput();
+  }
+
+  async function loadServer() {
+    const [aboutRes, siteRes] = await Promise.all([
+      api('/api/about'),
+      api('/api/site').catch(() => null),
+    ]);
+    const avatar = siteRes && siteRes.site && siteRes.site.avatarURL;
+    if (avatar) server.avatar = avatar;
+    applyServer(aboutRes.about || {});
+  }
+
+  /* ---------- 工具栏 ---------- */
+
+  function surround(before, after) {
+    const { selectionStart: s, selectionEnd: e, value } = contentEl;
+    const sel = value.slice(s, e);
+    contentEl.setRangeText(before + sel + after, s, e, 'end');
+    if (!sel) contentEl.setSelectionRange(s + before.length, s + before.length);
+    contentEl.focus();
+    onInput();
+  }
+
+  function prefixLines(prefix) {
+    const { selectionStart: s, selectionEnd: e, value } = contentEl;
+    const start = value.lastIndexOf('\n', s - 1) + 1;
+    let end = value.indexOf('\n', e);
+    if (end === -1) end = value.length;
+    const lines = value.slice(start, end).split('\n').map((l) => (l.trim() ? prefix + l : l));
+    contentEl.setRangeText(lines.join('\n'), start, end, 'end');
+    contentEl.focus();
+    onInput();
+  }
+
+  document.querySelectorAll('[data-wrap]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const wrap = btn.getAttribute('data-wrap');
+      if (btn.hasAttribute('data-line')) prefixLines(wrap);
+      else surround(wrap, wrap);
+    });
+  });
+
+  $('tb-link').addEventListener('click', () => {
+    const url = prompt('链接地址', 'https://');
+    if (!url) return;
+    const sel = contentEl.value.slice(contentEl.selectionStart, contentEl.selectionEnd) || '链接文字';
+    const { selectionStart: s, selectionEnd: e } = contentEl;
+    contentEl.setRangeText('[' + sel + '](' + url + ')', s, e, 'end');
+    contentEl.focus();
+    onInput();
+  });
+
+  $('tb-image').addEventListener('click', () => {
+    const url = prompt('图片地址（可先用图床拿到链接）', 'https://');
+    if (!url) return;
+    surround('![](' + url + ')', '');
+  });
+
+  contentEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      contentEl.setRangeText('  ', contentEl.selectionStart, contentEl.selectionEnd, 'end');
+      onInput();
+    }
+  });
+
+  [titleEl, contentEl].forEach((el) => el.addEventListener('input', onInput));
+
+  /* ---------- 保存 ---------- */
+
+  function renderResult(ok, payload) {
+    const deploy = payload.deploy || {};
+    const log = deploy.output
+      ? `<details><summary class="hint" style="cursor:pointer;margin-top:8px;">部署日志（${deploy.ms || 0} ms）</summary><pre>${esc(deploy.output)}</pre></details>`
+      : '';
+    if (ok) {
+      resultEl.innerHTML =
+        `<div class="result ok">
+          <div class="result-head">✅ 已保存</div>
+          <div class="result-line">文件：${esc((payload.about && payload.about.file) || 'content/about.md')}</div>
+          <div class="result-line">线上：<a href="https://tianchoy.github.io/about/" target="_blank" rel="noopener">https://tianchoy.github.io/about/</a></div>
+          <div class="result-line">${deploy.skipped ? '（仅写入本地文件，未推送）' : 'GitHub Actions 已触发，通常 30～60 秒后生效'}</div>
+          ${log}
+        </div>`;
+    } else {
+      resultEl.innerHTML =
+        `<div class="result err">
+          <div class="result-head">❌ 没保存成功</div>
+          <div class="result-line">${esc(payload.error || '未知错误')}</div>
+          ${log}
+        </div>`;
+    }
+    document.querySelector('.preview-scroll').scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  let saving = false;
+  async function save() {
+    if (saving) return;
+    if (!contentEl.value.trim()) {
+      toast('正文还是空的', 'err');
+      contentEl.focus();
+      return;
+    }
+    saving = true;
+    saveBtn.disabled = true;
+    const original = saveBtn.textContent;
+    saveBtn.textContent = '保存中…';
+    try {
+      const data = await api('/api/about', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: titleEl.value.trim(),
+          body: contentEl.value,
+          deploy: !dryRunEl.checked,
+        }),
+      });
+      applyServer(data.about || {});
+      renderResult(true, data);
+      toast(data.deploy && data.deploy.skipped ? '已写入本地文件' : '已保存并发布', 'ok');
+    } catch (e) {
+      renderResult(false, Object.assign({ error: e.message }, e.payload || {}));
+      toast('保存失败：' + e.message, 'err', 4200);
+    } finally {
+      saving = false;
+      saveBtn.disabled = false;
+      saveBtn.textContent = original;
+    }
+  }
+
+  saveBtn.addEventListener('click', save);
+
+  revertBtn.addEventListener('click', () => {
+    if (!confirm('放弃改动，恢复到服务器上的版本？')) return;
+    applyServer({ title: server.title, body: server.body });
+    toast('已恢复');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && (e.key === 'Enter' || e.key.toLowerCase() === 's')) {
+      e.preventDefault();
+      save();
+    }
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if (!isDirty()) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+
+  (async function boot() {
+    try {
+      await loadServer();
+      // focus 会让浏览器把光标位置滚进视野，手动压回顶部，否则首行会被工具栏切掉
+      contentEl.focus({ preventScroll: true });
+      contentEl.scrollTop = 0;
+    } catch (e) {
+      stateEl.textContent = '读取失败';
+      previewEl.innerHTML = `<div class="preview-empty">读取 content/about.md 失败：${esc(e.message)}</div>`;
+      toast('读取失败：' + e.message, 'err', 4200);
+    }
+  })();
+})();
+</script>
+</body>
+</html>

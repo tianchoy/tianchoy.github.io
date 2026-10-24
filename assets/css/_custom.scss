@@ -193,3 +193,31 @@ body[theme="dark"] {
     color: #c9ccd1;
   }
 }
+
+// 文章元信息里的作者：头像是圆形小图，和名字居中对齐
+.post-author {
+  .author {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .author-avatar {
+    flex: none;
+    width: 1.15em;
+    height: 1.15em;
+    border-radius: 50%;
+    object-fit: cover;
+    // 图还没加载完时留个浅色占位，避免文字跳动
+    background-color: rgba(128, 128, 128, 0.15);
+  }
+}
+
+// 标签链接沿用文章内链接色：主题只给了继承色（近黑），和左边「收录于」的蓝不一致
+.post-tags a {
+  color: $single-link-color;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}

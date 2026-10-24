@@ -26,6 +26,9 @@ summaryLength = 30
 
 [taxonomies]
   category = "categories"
+  # 必须显式声明：只写 category 会把 Hugo 默认的 tags 一起顶掉，
+  # 导致文章底部 /tags/<tag>/ 页面不存在、GetPage 取到 nil，标签渲染成空。
+  tag = "tags"
 
 [params]
   defaultTheme = "auto"

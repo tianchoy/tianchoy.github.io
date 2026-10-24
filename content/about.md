@@ -5,19 +5,10 @@ date: 2022-01-01
 layout: "about"
 ---
 
-I **LOVE** writing code — it's like solving puzzles while building cool stuff! 🛠️
+I love my country and embrace minimalism. I work as a programmer and enjoy capturing life with my phone. I'm also a storytelling enthusiast, even as I grow older.
 
-My usual playgrounds are **Vue**, **React**, and **Flutter**. Sure, bugs pop up now and then 🐞, but hey — who doesn't enjoy a good challenge? I'm always up for it!
+I also keep a synchronized record on another platform: [Essay](https://www.essay.ink/tianchao). If you happen to use [FanFou](https://fanfou.com/tianchoy), feel free to check out my life updates there. If there’s anything else you’d like to share with me, you can also send me a direct [Email](mailto:tianchoy@live.com).
 
-When I'm not typing away at the keyboard, you'll probably find me:
+Outside of work, life is equally important. I love staying at home to watch shows (I enjoy comedies, suspense, and detective series or movies), listening to rock music, playing pool, watching the Premier League, and savoring all kinds of chicken dishes.
 
-- 🎱 Playing snooker with focus mode ON
-- ⚽ Kicking a ball around like I'm in the Premier League
-- 🎸 Jamming with friends on weekends — guitars, good vibes, maybe a drink or two 🍻
-- 🛏️ Or just… lying in bed, diving into a book 📖 or zoning out to some chill tunes 🎧
-
-Oh! And I'm kinda into documenting life's little moments ✨ — because every day has something cool worth remembering.
-
-I share snippets of my life here and also over at [饭否](https://fanfou.com/tianchoy) — come say hi if you feel like it! Let's chat, connect, and maybe create something fun together 😄
-
-Thanks for stopping by! ♥️
+Thank you for stopping by. ♥️

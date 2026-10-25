@@ -37,7 +37,7 @@ summaryLength = 30
   dateFormat = "2006-01-02"
   title = "特严赤傲"
   description = "小田的博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等的记录。"
-  keywords = "博客,前端,Vue,React,Flutter,生活随笔"
+  keywords = ["博客", "前端", "Vue", "React", "Flutter", "生活随笔"]
 
   # 站内搜索：KeepIt 的 lunr 方案，索引为构建产物 /index.json
   # 中文分词由 assets/lib/lunr/lunr.segmentit.js 覆盖主题的 3.7MB 词典实现
@@ -182,6 +182,17 @@ summaryLength = 30
     [params.page.code]
       copy = true
       maxShownLines = 50
+
+# 搜索引擎站长平台验证：拿到各平台的「HTML 标记 / meta content」后填到对应位置，
+# 主题（layouts/partials/head/seo.html）会自动输出对应的 <meta name="..."> 验证标签。
+# 不填则不输出任何验证标签，不影响其它 SEO。填了才生效。
+# 推荐都做一遍，能显著加快收录：Google Search Console / Bing Webmaster / 百度搜索资源平台。
+[params.verification]
+  google = ""   # Google Search Console → 设置 → 所有者 → 验证 → HTML 标记 里的 content
+  bing = ""     # Bing Webmaster Tools → 顶部「设置」→ 站点属性 → 验证 → meta 的 content（Yandex 可复用同一段）
+  baidu = ""    # 百度搜索资源平台 → 站点属性 → 百度验证 → HTML 标签验证 的 content
+  yandex = ""
+  pinterest = ""
 
 [menu]
   [[menu.main]]

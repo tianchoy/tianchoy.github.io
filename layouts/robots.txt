@@ -1,0 +1,60 @@
+User-agent: *
+
+# 只屏蔽静态资源目录，页面与图片（头像、OG 分享图、favicon）保持可抓取，
+# 否则社交分享卡片和图片搜索都拿不到图。
+Disallow: /js/
+Disallow: /css/
+
+# 以下为低价值/高负载的采集型爬虫，直接禁止，避免浪费 GitHub Pages 带宽配额
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: BLEXBot
+Disallow: /
+
+User-agent: SISTRIX Crawler
+Disallow: /
+
+User-agent: sistrix
+Disallow: /
+
+User-agent: 007ac9
+Disallow: /
+
+User-agent: 007ac9 Crawler
+Disallow: /
+
+User-agent: UptimeRobot
+Disallow: /
+
+User-agent: Ezooms Bot
+Disallow: /
+
+User-agent: Perl LWP
+Disallow: /
+
+User-agent: netEstate NE Crawler
+Disallow: /
+
+User-agent: WiseGuys Robot
+Disallow: /
+
+User-agent: Turnitin Bot
+Disallow: /
+
+User-agent: Heritrix
+Disallow: /
+
+User-agent: pimonster
+Disallow: /
+
+User-agent: SurdotlyBot
+Disallow: /
+
+User-agent: ZoominfoBot
+Disallow: /
+
+Sitemap: {{ .Site.BaseURL }}sitemap.xml

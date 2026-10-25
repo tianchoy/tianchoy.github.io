@@ -1,0 +1,34 @@
+{{- $params := .Scratch.Get "params" -}}
+
+<meta name="Description" content="{{ $params.description | default .Site.Params.description }}">
+
+{{- template "_internal/opengraph.html" . -}}
+{{- template "_internal/twitter_cards.html" . -}}
+
+<meta name="application-name" content="{{ .Site.Params.app.title | default .Site.Title }}">
+<meta name="apple-mobile-web-app-title" content="{{ .Site.Params.app.title | default .Site.Title }}">
+
+{{- with .Site.Params.app.themeColor -}}
+    <meta name="theme-color" content="{{ . }}">
+{{- end -}}
+
+{{- with .Site.Params.app.tileColor -}}
+    <meta name="msapplication-TileColor" content="{{ . }}">
+{{- end -}}
+
+{{/* SEO 补充：keywords。
+   Google 已不再参考，但百度、必应、Yandex 等仍会看。
+   首页取站点关键词（params.keywords），文章/页面优先取 tags，再退到站点关键词。 */}}
+{{- $kw := .Keywords -}}
+{{- if not $kw -}}{{- $kw = .Params.tags -}}{{- end -}}
+{{- if not $kw -}}{{- $kw = .Site.Params.keywords -}}{{- end -}}
+{{- with $kw -}}
+  {{- if reflect.IsSlice . -}}
+<meta name="keywords" content="{{ delimit . ", " }}">
+  {{- else -}}
+<meta name="keywords" content="{{ . }}">
+  {{- end -}}
+{{- end -}}
+
+{{/* RSS 订阅入口：让搜索引擎与阅读器能直接发现订阅源（主题默认没在 head 输出该 link） */}}
+<link rel="alternate" type="application/rss+xml" title="{{ .Site.Title }} · 文章订阅" href="{{ .Site.BaseURL }}posts/index.xml">

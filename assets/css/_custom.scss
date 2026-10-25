@@ -599,3 +599,61 @@ body[theme="dark"] {
     }
   }
 }
+
+// ==============================
+// 头像下方的社交图标：统一尺寸 + 同一水平线
+// 主题默认 .links 用 vertical-align:text-bottom 混排 Font Awesome 字形与
+// simple-icons 注入的 <svg>（豆瓣），二者基线、视觉高度、颜色都不同，
+// 看起来大小不一、不在一条线上。这里改成 flex 横向居中、每个链接固定等宽方块，
+// 内部图标（FA 的 <i> 与 simple-icons 的 <svg>/<img>）统一尺寸，颜色跟次级文字一致。
+// 首页与关于页都复用 home/profile.html，所以这一处同时覆盖两个页面。
+// ==============================
+.home-profile .links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: .25rem .55rem;
+  padding: .5rem 0;
+
+  a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    font-size: 1.4rem;
+    line-height: 1;
+    border-radius: 50%;
+    color: $global-font-secondary-color;
+    transition: color .2s ease, background-color .2s ease, transform .2s ease;
+
+    &:hover {
+      color: $global-link-hover-color;
+      background-color: rgba(0, 0, 0, .06);
+      transform: translateY(-2px);
+    }
+
+    // Font Awesome 字形
+    i {
+      line-height: 1;
+    }
+
+    // simple-icons 注入的 <svg>（豆瓣等）以及旧式 <img>：强制统一成正方形
+    svg,
+    img,
+    .icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      display: block;
+    }
+  }
+
+  [theme=dark] & a {
+    color: $global-font-secondary-color-dark;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, .08);
+    }
+  }
+}

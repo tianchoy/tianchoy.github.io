@@ -62,3 +62,14 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # 部署完成后主动通知搜索引擎来抓取 sitemap，加快/扩大收录
+      # （Google、Bing 的 ping 端点；百度需在搜索资源平台手动提交 sitemap.xml，
+      #  因为百度没有公开的匿名 ping 接口）
+      - name: Ping search engines with sitemap
+        if: success()
+        run: |
+          SITEMAP="${{ steps.deployment.outputs.page_url }}sitemap.xml"
+          echo "Sitemap: $SITEMAP"
+          curl -s -A "Mozilla/5.0" -o /dev/null -w "google: %{http_code}\n" "https://www.google.com/ping?sitemap=$SITEMAP" || true
+          curl -s -A "Mozilla/5.0" -o /dev/null -w "bing:   %{http_code}\n" "https://www.bing.com/ping?sitemap=$SITEMAP" || true

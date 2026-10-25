@@ -62,7 +62,7 @@
       <table class="post-table">
         <thead>
           <tr>
-            <th class="col-check"><input type="checkbox" id="checkAll" title="全选当前结果"></th>
+            <th class="col-check"><input type="checkbox" id="checkAll" title="全选本页"></th>
             <th>标题</th>
             <th class="col-cat">分类</th>
             <th class="col-date">日期</th>
@@ -76,6 +76,8 @@
         </tbody>
       </table>
     </div>
+
+    <div class="pager" id="pager" hidden></div>
   </section>
 
   <div class="action-bar">
@@ -110,6 +112,8 @@
   let stats = { total: 0, drafts: 0, words: 0 };
   let picked = new Set();
   let busy = false;
+  let page = 1;
+  const PAGE_SIZE = 10;
 
   const fmtSize = (n) => (n < 1024 ? n + ' B' : (n / 1024).toFixed(1) + ' KB');
   const fmtWords = (n) => (n >= 10000 ? (n / 10000).toFixed(1) + ' 万' : String(n));
@@ -130,10 +134,52 @@
     });
   }
 
+  /* ---------- 分页辅助 ---------- */
+
+  function pageCount(list) {
+    return Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  }
+
+  // 生成紧凑的页码序列，例如 [1,2,'…',5,6,7,'…',12]
+  function pageNumbers(cur, total) {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const out = [1];
+    const left = Math.max(2, cur - 1);
+    const right = Math.min(total - 1, cur + 1);
+    if (left > 2) out.push('…');
+    for (let n = left; n <= right; n++) out.push(n);
+    if (right < total - 1) out.push('…');
+    out.push(total);
+    return out;
+  }
+
+  function renderPager(list, pages) {
+    const pager = $('pager');
+    if (list.length <= PAGE_SIZE) {
+      pager.hidden = true;
+      return;
+    }
+    pager.hidden = false;
+    let html = `<button class="btn btn-ghost btn-sm" data-nav="prev" ${page <= 1 ? 'disabled' : ''}>‹ 上一页</button>`;
+    for (const n of pageNumbers(page, pages)) {
+      if (n === '…') html += `<span class="pager-gap">…</span>`;
+      else html += `<button class="btn btn-ghost btn-sm pager-num ${n === page ? 'is-cur' : ''}" data-page="${n}">${n}</button>`;
+    }
+    html += `<button class="btn btn-ghost btn-sm" data-nav="next" ${page >= pages ? 'disabled' : ''}>下一页 ›</button>`;
+    html += `<span class="pager-info">第 ${page} / ${pages} 页 · 共 ${list.length} 篇</span>`;
+    pager.innerHTML = html;
+  }
+
   /* ---------- 渲染 ---------- */
 
   function render() {
     const list = visible();
+    const pages = pageCount(list);
+    if (page > pages) page = pages;
+    if (page < 1) page = 1;
+    const start = (page - 1) * PAGE_SIZE;
+    const pageItems = list.slice(start, start + PAGE_SIZE);
+
     // 选中项若已被过滤掉，保留在集合里但界面上不可见，容易误删——这里直接收敛
     const visibleFiles = new Set(list.map((p) => p.file));
     for (const f of [...picked]) if (!visibleFiles.has(f)) picked.delete(f);
@@ -143,14 +189,16 @@
         ? `<tr><td colspan="7" class="num" style="text-align:center;padding:26px;">没有匹配的文章</td></tr>`
         : `<tr><td colspan="7" class="num" style="text-align:center;padding:26px;">content/posts 里还没有文章</td></tr>`;
     } else {
-      rowsEl.innerHTML = list
+      rowsEl.innerHTML = pageItems
         .map((p, i) => {
           const cats = p.categories.length
             ? p.categories.map((c) => `<span class="chip chip-accent">${esc(c)}</span>`).join(' ')
             : '<span class="num">—</span>';
           const tags = p.tags.length ? `  #${esc(p.tags.slice(0, 2).join(' #'))}` : '';
+          // data-pick / data-del 用「过滤后全局下标」，这样翻页/过滤后点击仍指向同一篇
+          const g = start + i;
           return `<tr data-file="${esc(p.file)}" class="${picked.has(p.file) ? 'is-picked' : ''}">
-            <td class="col-check"><input type="checkbox" data-pick="${i}" ${picked.has(p.file) ? 'checked' : ''}></td>
+            <td class="col-check"><input type="checkbox" data-pick="${g}" ${picked.has(p.file) ? 'checked' : ''}></td>
             <td class="t-title">
               <a href="${esc(p.permalink)}" target="_blank" rel="noopener" title="${esc(p.file)}">${esc(p.title)}</a>
               <span class="num">${esc(p.file.replace(/^content\/posts\//, ''))}${tags}</span>${p.draft ? '<span class="badge-draft">草稿</span>' : ''}
@@ -162,7 +210,7 @@
             <td class="t-act">
               <span class="act-group">
                 <a class="btn btn-ghost btn-sm" href="/publish?file=${encodeURIComponent(p.file)}">编辑</a>
-                <button class="btn btn-danger btn-sm" data-del="${i}">删除</button>
+                <button class="btn btn-danger btn-sm" data-del="${g}">删除</button>
               </span>
             </td>
           </tr>`;
@@ -174,9 +222,12 @@
 
     const totalPicked = picked.size;
     selBar.hidden = totalPicked === 0;
-    selText.textContent = `已选 ${totalPicked} 篇`;
-    checkAll.checked = list.length > 0 && list.every((p) => picked.has(p.file));
-    checkAll.indeterminate = !checkAll.checked && list.some((p) => picked.has(p.file));
+    selText.textContent = `已选 ${totalPicked} 篇 · 当前页 ${pageItems.filter((p) => picked.has(p.file)).length} 篇`;
+    // 全选/半选只针对当前页
+    checkAll.checked = pageItems.length > 0 && pageItems.every((p) => picked.has(p.file));
+    checkAll.indeterminate = !checkAll.checked && pageItems.some((p) => picked.has(p.file));
+
+    renderPager(list, pages);
 
     const drafts = stats.drafts ? `${stats.drafts} 篇草稿` : '无草稿';
     footHint.textContent = `共 ${stats.total} 篇 · ${drafts} · 约 ${fmtWords(stats.words)} 字`;
@@ -209,12 +260,31 @@
 
   checkAll.addEventListener('change', () => {
     const list = visible();
-    if (checkAll.checked) list.forEach((p) => picked.add(p.file));
-    else list.forEach((p) => picked.delete(p.file));
+    const start = (page - 1) * PAGE_SIZE;
+    const pageItems = list.slice(start, start + PAGE_SIZE);
+    if (checkAll.checked) pageItems.forEach((p) => picked.add(p.file));
+    else pageItems.forEach((p) => picked.delete(p.file));
     render();
   });
 
-  [qEl, catEl, statusEl].forEach((el) => el.addEventListener('input', render));
+  // 翻页
+  $('pager').addEventListener('click', (e) => {
+    const nav = e.target.closest('[data-nav]');
+    const num = e.target.closest('[data-page]');
+    if (nav) {
+      const pages = pageCount(visible());
+      if (nav.dataset.nav === 'prev' && page > 1) page--;
+      else if (nav.dataset.nav === 'next' && page < pages) page++;
+      else return;
+      render();
+    } else if (num) {
+      page = Number(num.dataset.page);
+      render();
+    }
+  });
+
+  // 过滤条件变化后回到第一页，避免停留在空页
+  [qEl, catEl, statusEl].forEach((el) => el.addEventListener('input', () => { page = 1; render(); }));
 
   $('btnClearSel').addEventListener('click', () => { picked.clear(); render(); });
   $('btnReload').addEventListener('click', () => load());

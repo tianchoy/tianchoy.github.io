@@ -103,8 +103,13 @@
   // 头图：顶部留白
   .home-profile {
     margin-top: 2rem;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0;
     text-align: left;
+
+    // 关于页不需要头像下方的社交图标行，直接隐藏（首页仍保留）
+    .links {
+      display: none;
+    }
   }
 
   // 圆形头像（主题的 home-avatar 样式只在 .home 下生效，这里需单独指定）
@@ -131,7 +136,7 @@
 
   .about-content {
     text-align: left;
-    margin-top: 2.2rem;
+    margin-top: 1.6rem;
     font-size: 1rem;
     line-height: 1.9;
 

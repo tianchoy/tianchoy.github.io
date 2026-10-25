@@ -36,7 +36,7 @@ summaryLength = 30
   fingerprint = "sha256"
   dateFormat = "2006-01-02"
   title = "特严赤傲"
-  description = "小田的github博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等等的记录。"
+  description = "小田的博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等的记录。"
   keywords = "博客,前端,Vue,React,Flutter,生活随笔"
 
   # 站内搜索：KeepIt 的 lunr 方案，索引为构建产物 /index.json

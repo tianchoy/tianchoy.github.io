@@ -657,3 +657,67 @@ body[theme="dark"] {
     }
   }
 }
+
+// ==============================
+// 首页资料区精修（仅首页，关于页不受影响）
+// 加大留白、社交前加一条居中的细分隔线，让首屏更有“完成感”而不是赤裸裸居中
+// ==============================
+.page.home .home-profile {
+  padding-top: 1rem;
+
+  .home-avatar {
+    margin-bottom: 1.05rem;
+  }
+
+  .home-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .home-subtitle {
+    margin-top: .4rem;
+    font-size: .95rem;
+  }
+
+  // 社交图标整行只有图标那么宽，border-top 正好变成一条居中的细分隔线
+  .links {
+    width: fit-content;
+    margin: 1.2rem auto 0;
+    padding-top: 1.2rem;
+    border-top: 1px solid $global-border-color;
+  }
+}
+
+[theme=dark] {
+  .page.home .home-profile .links {
+    border-top-color: $global-border-color-dark;
+  }
+}
+
+// ==============================
+// 文章详情页：元信息与正文之间加一条细分隔线，层级更清楚
+// ==============================
+.single .post-meta {
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid $global-border-color;
+}
+
+[theme=dark] .single .post-meta {
+  border-bottom-color: $global-border-color-dark;
+}
+
+// 行内代码：给一点底色与圆角，和代码块风格统一（主题默认行内 code 是裸的）
+.single .content {
+  code:not(pre code) {
+    background: rgba(128, 128, 128, .12);
+    padding: .12em .42em;
+    border-radius: 5px;
+    font-size: .88em;
+    word-break: break-word;
+  }
+}
+
+[theme=dark] .single .content code:not(pre code) {
+  background: rgba(255, 255, 255, .1);
+}

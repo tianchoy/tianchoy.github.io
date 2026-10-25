@@ -664,39 +664,85 @@ body[theme="dark"] {
 }
 
 // ==============================
-// 首页资料区精修（仅首页，关于页不受影响）
-// 加大留白、社交前加一条居中的细分隔线，让首屏更有“完成感”而不是赤裸裸居中
+// 首页资料区：极简 hero 精修（仅首页；关于页不受影响）
+// 1) 整屏一屏展示、无滚动条：主题 .wrapper 已是 flex 纵向列、main flex:1、footer 贴底，
+//    整页高度本就等于一屏；之前给 .page.home 又加了 min-height: calc(100vh - 3.5rem)，
+//    把内容区撑到近一屏，再叠加底部 footer（统计+版权）就超过一屏 → 出现滚动条。
+//    这里去掉 .page.home 的 100vh 约束，改让 main 在其高度内垂直居中 hero 即可。
+// 2) 统一垂直节奏：头像 → 姓名 → 简介 → 社交，间距用一致比例，
+//    去掉原先被主题 .5rem padding 在姓名/简介之间撑出的大空隙
+// 3) 去掉原先那条“正好等于图标行宽”的细分隔线——它像图标的下划线，反而显随意；
+//    极简下用留白分区更干净。若想保留分隔，可把 .links 的 border-top 打开。
+// 4) 头像略缩小、姓名加一点字距、简介用次级色弱化，层级更清楚
 // ==============================
+.page.home {
+  text-align: center;
+  // 桌面端保留主题给 .page 的 padding-top（页头高）作兜底：
+  // 即便浏览器不支持 :has()，hero 也只是不居中、不会被固定页头遮住
+}
+
+// 仅在首页：让 main 在其高度（= 100vh - footer）内垂直居中 hero
+// 注：主题 .wrapper 在首页会带 home 类（baseof 里按 .IsHome 加的），
+// 这里用普通类选择器，兼容主题所用的 libsass 编译器（不支持 :has()）。
+.wrapper.home {
+  main {
+    display: flex;
+    align-items: center;
+    min-height: 0;
+  }
+
+  .container {
+    width: 100%;
+  }
+
+  // 由 flex 居中接管，不再需要页头占位
+  .page.home {
+    padding-top: 0;
+  }
+}
+
 .page.home .home-profile {
-  padding-top: 1rem;
+  transform: none;          // 去掉主题默认 translateY(16vh)
+  padding: 0;
+  text-align: center;
 
   .home-avatar {
-    margin-bottom: 1.05rem;
+    margin-bottom: 1.1rem;
+
+    img {
+      width: 7rem;          // 比主题 8rem 略小，更克制
+    }
   }
 
   .home-title {
+    margin: 0;
+    padding: 0;             // 清掉主题 .5rem padding，节奏自己控
     font-size: 1.5rem;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: .04em;  // 中文名稍加字距更舒展
   }
 
   .home-subtitle {
-    margin-top: .4rem;
+    margin: .4rem 0 0;
+    padding: 0;
     font-size: .95rem;
+    font-weight: 400;
+    color: $global-font-secondary-color;
   }
 
-  // 社交图标整行只有图标那么宽，border-top 正好变成一条居中的细分隔线
+  // 社交图标：用统一留白与简介隔开，去掉细分隔线
   .links {
-    width: fit-content;
-    margin: 1.2rem auto 0;
-    padding-top: 1.2rem;
-    border-top: 1px solid $global-border-color;
+    width: auto;
+    margin: 1.6rem auto 0;
+    padding: 0;
+    border-top: none;
+    gap: .35rem .7rem;
   }
 }
 
 [theme=dark] {
-  .page.home .home-profile .links {
-    border-top-color: $global-border-color-dark;
+  .page.home .home-profile .home-subtitle {
+    color: $global-font-secondary-color-dark;
   }
 }
 

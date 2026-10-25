@@ -20,7 +20,7 @@
         <div id="mask"></div>
 
         {{- /* Body wrapper */ -}}
-        <div class="wrapper">
+        <div class="wrapper{{ if .IsHome }} home{{ end }}">
             {{- partial "header.html" . -}}
             <main class="main">
                 <div class="container">

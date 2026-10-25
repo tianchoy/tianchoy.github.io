@@ -5,10 +5,12 @@ date: 2022-01-01
 layout: "about"
 ---
 
-I love my country and embrace minimalism. I work as a programmer and enjoy capturing life with my phone. I'm also a storytelling enthusiast, even as I grow older.
+I love my country, and I try to keep life simple and minimal. I'm a programmer by trade, and outside of code I like documenting everyday life with my phone — little moments, ordinary scenes, things I don't want to forget.
 
-I also keep a synchronized record on another platform: [Essay](https://www.essay.ink/tianchao). If you happen to use [FanFou](https://fanfou.com/tianchoy), feel free to check out my life updates there. If there’s anything else you’d like to share with me, you can also send me a direct [Email](mailto:tianchoy@live.com).
+I've always loved telling stories, and that hasn't changed as I've gotten older. If anything, I appreciate them more now.
 
-Outside of work, life is equally important. I love staying at home to watch shows (I enjoy comedies, suspense, and detective series or movies), listening to rock music, playing pool, watching the Premier League, and savoring all kinds of chicken dishes.
+I cross-post my writing on [Essay](https://www.essay.ink/tianchao), another platform I use. If you're on [Fanfou](https://fanfou.com/tianchoy), you can follow my life updates there too. And if you want to get in touch, just [Email](mailto:tianchoy@live.com) me — I'm always happy to hear from people.
 
-Thank you for stopping by. ♥️
+Work isn't everything to me; life outside of it matters just as much. I love chilling at home with comedies, thrillers, and detective shows and movies, listening to rock, playing pool, watching the Premier League, and trying every kind of chicken dish I can find. I'm always up for a good chicken meal.
+
+Thanks for stopping by. I hope you find something here you enjoy.

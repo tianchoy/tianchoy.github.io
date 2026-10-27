@@ -182,6 +182,32 @@
   .post-info-md:empty {
     display: none;
   }
+
+  // 文章底部「cd ..」返回上一页：用等宽字体模拟终端命令，悬停左移并高亮
+  .post-info-mod .cd-back {
+    font-family: $code-font-family;
+    font-size: 0.85rem;
+    color: $global-font-secondary-color;
+    text-decoration: none;
+    cursor: pointer;
+    @include transition(color 0.2s ease, transform 0.2s ease);
+
+    &:hover,
+    &:focus-visible {
+      color: $global-link-color;
+      @include transform(translateX(-3px));
+      outline: none;
+    }
+
+    [theme=dark] & {
+      color: $global-font-secondary-color-dark;
+
+      &:hover,
+      &:focus-visible {
+        color: $global-link-color-dark;
+      }
+    }
+  }
 }
 
 // 暗色模式：正文/元信息改用亮色，避免深色文字糊在深色背景上看不清

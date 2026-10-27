@@ -3,22 +3,9 @@
 <div class="post-footer" id="post-footer">
     <div class="post-info">
         <div class="post-info-line">
+            {{- /* 用终端风格的「cd ..」替代「更新于」：点击返回上一页（浏览器历史后退，无历史则回落首页） */ -}}
             <div class="post-info-mod">
-                <span>
-                    {{- /* 与标题下的发布日期保持一致：日期部分沿用 params.dateformat，再补 15:04:05 */ -}}
-                    {{- $df := .Site.Params.dateformat | default "2006-01-02" -}}
-                    {{- if not (findRE "(15|03)" $df) }}{{ $df = printf "%s 15:04:05" $df }}{{ end -}}
-                    {{- with $df | .Lastmod.Format -}}
-                        {{- dict "Date" . | T "updatedOnDate" -}}
-                        {{- if $.Site.Params.gitRepo -}}
-                            {{- with $.GitInfo -}}
-                                &nbsp;<a class="git-hash" href="{{ printf `%v/commit/%v` $.Site.Params.gitRepo .Hash }}" target="_blank" title="commit by {{ .AuthorName }}({{ .AuthorEmail }}) {{ .Hash }}: {{ .Subject }}">
-                                    <i class="fas fa-hashtag fa-fw" aria-hidden="true"></i>{{- .AbbreviatedHash -}}
-                                </a>
-                            {{- end -}}
-                        {{- end -}}
-                    {{- end -}}
-                </span>
+                <a class="cd-back" href="javascript:void(0)" onclick="if(history.length>1){history.back();}else{location.href={{ .Site.Home.RelPermalink | safeURL }};}return false;" title="返回上一页" aria-label="返回上一页">cd ..</a>
             </div>
             {{- with $params.license | string -}}
             <div class="post-info-license">

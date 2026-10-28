@@ -33,25 +33,39 @@
      的原样值（已做百分号编码，中文路径直接可用），首页就是 /counter//.json；
      全站总量用保留字 TOTAL（大写、没有前导斜杠）。
      注意：后台必须勾选 Allow adding visitor counts on your website，
-     否则这里会拿到 403，统计条保持隐藏。 */
+     否则这里会拿到 403，统计条保持隐藏。
+     另外：本站曾把分类 diary 改名为 随笔，文章 URL 随之从 /posts/diary/<slug>/
+     变为 /posts/随笔/<slug>/，历史阅读量仍记在旧路径下。所以本页阅读量在查当前
+     路径的同时，也查一份旧 diary 路径并合计，改名后阅读量才不会凭空归零。 */
   var base = '{{ $host }}/counter/';
-  function fill(path, id) {
+  function getCount(path) {
     return fetch(base + path + ".json", { credentials: "omit" })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (d) {
-        if (!d || d.count == null) return false;
-        var el = document.getElementById(id);
-        if (el) el.textContent = d.count;
-        return true;
+      .then(function (r) {
+        if (r.status === 200) return r.json();
+        if (r.status === 404) return { count: 0, count_unique: 0 }; // 无记录即 0 次，不是错误
+        return null;
       })
-      .catch(function () { return false; });
+      .then(function (d) { return (d && d.count != null) ? (parseInt(d.count, 10) || 0) : 0; })
+      .catch(function () { return 0; });
   }
   var page = location.pathname || "/";
-  Promise.all([fill("TOTAL", "gc-total"), fill(page, "gc-page")])
-    .then(function (res) {
-      var box = document.getElementById("gc-stats");
-      if (box && (res[0] || res[1])) box.hidden = false;
-    });
+  var legacyPage = page.replace(/\/posts\/随笔\//, "/posts/diary/");
+  var pagePaths = [page];
+  if (legacyPage !== page) pagePaths.push(legacyPage);
+  Promise.all([
+    getCount("TOTAL"),
+    Promise.all(pagePaths.map(getCount))
+  ]).then(function (res) {
+    var total = res[0];
+    var pageSum = res[1].reduce(function (a, b) { return a + b; }, 0);
+    var box = document.getElementById("gc-stats");
+    if (!box) return;
+    var totalEl = document.getElementById("gc-total");
+    var pageEl = document.getElementById("gc-page");
+    if (totalEl) totalEl.textContent = total;
+    if (pageEl) pageEl.textContent = pageSum; // 0 也正常显示，不再留占位符
+    if (total > 0 || pageSum > 0) box.hidden = false;
+  });
 })();
 </script>
     {{- end }}

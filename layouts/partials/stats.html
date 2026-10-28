@@ -48,7 +48,7 @@
       .then(function (d) { return (d && d.count != null) ? (parseInt(d.count, 10) || 0) : 0; })
       .catch(function () { return 0; });
   }
-  var page = location.pathname || "/";
+  var page = decodeURIComponent(location.pathname || "/");
   var legacyPage = page.replace(/\/posts\/随笔\//, "/posts/diary/");
   var pagePaths = [page];
   if (legacyPage !== page) pagePaths.push(legacyPage);

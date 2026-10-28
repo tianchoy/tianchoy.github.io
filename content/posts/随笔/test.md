@@ -4,6 +4,7 @@ date: 2024-10-20T11:42:58+08:00
 categories: ["随笔"]
 tags: ["随笔", "生活", "人生", "自我", "时间"]
 draft: false
+aliases: ["/posts/diary/test/"]
 ---
 
 - 生活总是苦的，这就是我们为什么一遇到点甜就奋不顾身的原因。

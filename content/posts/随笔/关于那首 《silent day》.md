@@ -4,6 +4,7 @@ date: 2025-11-04T14:59:00+08:00
 categories: ["随笔"]
 tags: ["音乐", "青春", "回忆", "散文", "朋友"]
 draft: false
+aliases: ["/posts/diary/关于那首 《silent day》/"]
 ---
 
 一首歌，一些人，一座城，一段记忆。

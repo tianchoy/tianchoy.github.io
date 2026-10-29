@@ -799,32 +799,105 @@ body[theme="dark"] {
   background: rgba(255, 255, 255, .1);
 }
 
-// 文章目录（服务端生成的扁平列表）：去掉默认列表样式，按标题级别缩进
-.toc .toc-list {
-  list-style: none;
-  margin: 0;
-  padding-left: 0;
-}
-.toc .toc-item {
-  line-height: 1.9;
-}
-.toc .toc-item a {
-  color: $global-font-secondary-color;
-  &:hover,
-  &.active {
-    color: $global-link-color;
+// 文章目录：顶部内联卡片（可折叠），替代默认的右侧浮窗
+.toc-card {
+  margin: 0 0 1.6rem;
+
+  .toc-card-details {
+    border: 1px solid $global-border-color;
+    border-radius: 10px;
+    background: rgba(128, 128, 128, .05);
+    overflow: hidden;
+
+    [theme=dark] & {
+      border-color: $global-border-color-dark;
+      background: rgba(255, 255, 255, .04);
+    }
   }
-}
-.toc .toc-h3 {
-  padding-left: .9rem;
-}
-.toc .toc-h4 {
-  padding-left: 1.8rem;
-}
-[theme=dark] .toc .toc-item a {
-  color: $global-font-secondary-color-dark;
-  &:hover,
-  &.active {
-    color: $global-link-color-dark;
+
+  // 标题行：去掉浏览器原生三角，改用自定义 chevron
+  .toc-card-summary {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .7rem 1rem;
+    cursor: pointer;
+    user-select: none;
+    font-weight: 600;
+    color: $global-font-color;
+    list-style: none;
+
+    &::-webkit-details-marker {
+      display: none;
+    }
+
+    [theme=dark] & {
+      color: $global-font-color-dark;
+    }
+
+    i.fa-stream {
+      color: $global-link-color;
+
+      [theme=dark] & {
+        color: $global-link-color-dark;
+      }
+    }
+  }
+
+  .toc-card-title {
+    flex: 1;
+    font-size: .95rem;
+    letter-spacing: .02em;
+  }
+
+  .toc-card-chevron {
+    font-size: .78rem;
+    color: $global-font-secondary-color;
+    transition: transform .2s ease;
+  }
+
+  .toc-card-details[open] .toc-card-chevron {
+    transform: rotate(180deg);
+  }
+
+  .toc-card-nav {
+    padding: .2rem 1rem .85rem;
+  }
+
+  .toc-list {
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+  }
+
+  .toc-item {
+    line-height: 2;
+
+    a {
+      color: $global-font-secondary-color;
+      text-decoration: none;
+      transition: color .15s ease;
+
+      &:hover {
+        color: $global-link-color;
+      }
+
+      [theme=dark] & {
+        color: $global-font-secondary-color-dark;
+
+        &:hover {
+          color: $global-link-color-dark;
+        }
+      }
+    }
+  }
+
+  .toc-h3 {
+    padding-left: 1rem;
+  }
+
+  .toc-h4 {
+    padding-left: 2rem;
+    font-size: .9em;
   }
 }

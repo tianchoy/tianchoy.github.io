@@ -23,14 +23,6 @@
     {{- end -}}
     {{- if $tocInner -}}{{- $tocInner = printf "<ul class=\"toc-list\">%s</ul>" $tocInner -}}{{- end -}}
 
-    {{- /* Auto TOC（桌面端右侧浮动） */ -}}
-    {{- if and (ne $toc.enable false) $tocHeadings -}}
-        <div class="toc" id="toc-auto">
-            <h2 class="toc-title">{{ T "contents" }}</h2>
-            <div class="toc-content{{ if eq $toc.auto false }} always-active{{ end }}" id="toc-content-auto"><nav id="TableOfContents">{{ $tocInner | safeHTML }}</nav></div>
-        </div>
-    {{- end -}}
-
     <article class="page single">
         {{- /* Title */ -}}
         <h1 class="single-title animate__animated animate__flipInX">{{ .Title }}</h1>
@@ -114,15 +106,18 @@
             </div>
         {{- end -}}
 
-        {{- /* Static TOC（移动端折叠；主题 initToc 会把上面的 TableOfContents 移入此处） */ -}}
+        {{- /* 文章目录：顶部内联卡片（可折叠），替代主题默认右侧浮窗，更整洁统一 */ -}}
         {{- if and (ne $toc.enable false) $tocHeadings -}}
-            <div class="details toc" id="toc-static"  data-kept="{{ if $toc.keepStatic }}true{{ end }}">
-                <div class="details-summary toc-title">
-                    <span>{{ T "contents" }}</span>
-                    <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
-                </div>
-                <div class="details-content toc-content" id="toc-content-static"></div>
-            </div>
+            <aside class="toc-card">
+                <details class="toc-card-details" open>
+                    <summary class="toc-card-summary">
+                        <i class="fas fa-stream fa-fw" aria-hidden="true"></i>
+                        <span class="toc-card-title">{{ T "contents" }}</span>
+                        <i class="toc-card-chevron fas fa-chevron-down fa-fw" aria-hidden="true"></i>
+                    </summary>
+                    <nav class="toc-card-nav">{{ $tocInner | safeHTML }}</nav>
+                </details>
+            </aside>
         {{- end -}}
 
         {{- /* Content */ -}}

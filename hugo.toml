@@ -37,7 +37,9 @@ summaryLength = 30
   dateFormat = "2006-01-02"
   title = "特严赤傲"
   description = "小田的博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等的记录。"
-  keywords = ["博客", "前端", "Vue", "React", "Flutter", "生活随笔"]
+  # 站点级关键词：首页/列表页用。文章页自动改用该文的 tags。
+  # 2026-10-29 调整：原 Vue/React/Flutter 已无对应文章，换成贴合「随笔」内容的词。
+  keywords = ["随笔", "生活", "散文", "青春", "人生", "回忆", "自我", "博客", "记录", "思考", "前端", "摄影"]
 
   # 站内搜索：KeepIt 的 lunr 方案，索引为构建产物 /index.json
   # 中文分词由 assets/lib/lunr/lunr.segmentit.js 覆盖主题的 3.7MB 词典实现

@@ -1,6 +1,10 @@
 {{- $params := .Scratch.Get "params" -}}
 
-<meta name="Description" content="{{ $params.description | default .Site.Params.description }}">
+{{/* meta 描述回退链：文章字段 → 文章自动摘要（去 HTML、截断 150 字）→ 站点描述。
+   原来没有 description 字段时直接退回站点描述，导致全站文章共用同一条描述，对 SEO 不友好；
+   现在让每篇文章自动拿到与内容相关的、互不相同的 meta 描述，且和 OG/Twitter 卡片行为一致。 */}}
+{{- $desc := $params.description | default (.Summary | plainify | truncate 150) | default .Site.Params.description -}}
+<meta name="Description" content="{{ $desc }}">
 
 {{- template "_internal/opengraph.html" . -}}
 {{- template "_internal/twitter_cards.html" . -}}

@@ -3,26 +3,6 @@
 {{- define "content" -}}
     {{- $params := .Scratch.Get "params" -}}
 
-    {{- $toc := $params.toc -}}
-    {{- if eq $toc true -}}
-        {{- $toc = .Site.Params.page.toc | default dict -}}
-    {{- else if eq $toc false -}}
-        {{- $toc = dict "enable" false -}}
-    {{- end -}}
-
-    {{- /* 自定义文章目录：从正文 h2/h3/h4 标题提取，覆盖 Hugo 默认大纲不收录 h4 的限制。
-           生成扁平列表并按标题级别缩进；无标题的文章不渲染目录框。 */ -}}
-    {{- $tocRe := `<h([2-4]) id="([^"]+)"[^>]*>(.*?)</h[2-4]>` -}}
-    {{- $tocHeadings := findRE $tocRe .Content -}}
-    {{- $tocInner := "" -}}
-    {{- range $tocHeadings -}}
-        {{- $lv := replaceRE $tocRe "$1" . -}}
-        {{- $id := replaceRE $tocRe "$2" . -}}
-        {{- $txt := replaceRE $tocRe "$3" . | plainify -}}
-        {{- $tocInner = printf "%s<li class=\"toc-item toc-h%s\"><a href=\"#%s\">%s</a></li>" $tocInner $lv $id $txt -}}
-    {{- end -}}
-    {{- if $tocInner -}}{{- $tocInner = printf "<ul class=\"toc-list\">%s</ul>" $tocInner -}}{{- end -}}
-
     <article class="page single">
         {{- /* Title */ -}}
         <h1 class="single-title animate__animated animate__flipInX">{{ .Title }}</h1>
@@ -104,20 +84,6 @@
             <div class="featured-image">
                 {{- dict "Src" . "Title" $.Description "Resources" $.Resources | partial "plugin/image.html" -}}
             </div>
-        {{- end -}}
-
-        {{- /* 文章目录：顶部内联卡片（可折叠），替代主题默认右侧浮窗，更整洁统一 */ -}}
-        {{- if and (ne $toc.enable false) $tocHeadings -}}
-            <aside class="toc-card">
-                <details class="toc-card-details" open>
-                    <summary class="toc-card-summary">
-                        <i class="fas fa-stream fa-fw" aria-hidden="true"></i>
-                        <span class="toc-card-title">{{ T "contents" }}</span>
-                        <i class="toc-card-chevron fas fa-chevron-down fa-fw" aria-hidden="true"></i>
-                    </summary>
-                    <nav class="toc-card-nav">{{ $tocInner | safeHTML }}</nav>
-                </details>
-            </aside>
         {{- end -}}
 
         {{- /* Content */ -}}

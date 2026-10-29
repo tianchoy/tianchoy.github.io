@@ -128,6 +128,8 @@ console.log('代码块')
 
   const DRAFT_KEY = 'wb.draft.v1';
   const NEW_CAT = '__new__';
+  // 本篇在本机已保存过的文件路径（仅存本地或发布后记录），后续保存走「更新」而非重复新建
+  let currentFile = '';
 
   // /publish?file=content/posts/xxx.md 进入编辑模式
   const EDIT_FILE = new URLSearchParams(location.search).get('file') || '';
@@ -308,6 +310,7 @@ console.log('代码块')
       tags: tagsEl.value,
       content: contentEl.value,
       ts: Date.now(),
+      file: currentFile || undefined,
     };
     try {
       if (!data.title && !data.content.trim()) {
@@ -347,6 +350,7 @@ console.log('代码块')
     titleEl.value = d.title || '';
     tagsEl.value = d.tags || '';
     contentEl.value = d.content || '';
+    currentFile = d.file || '';
     discardBtn.hidden = false;
     saveStateEl.textContent = '已恢复上次未发布的草稿';
     return true;
@@ -355,6 +359,7 @@ console.log('代码块')
   discardBtn.addEventListener('click', () => {
     if (!confirm('丢弃本机草稿？正文会被清空。')) return;
     localStorage.removeItem(DRAFT_KEY);
+    currentFile = '';
     titleEl.value = '';
     tagsEl.value = '';
     contentEl.value = '';
@@ -380,7 +385,9 @@ console.log('代码块')
     const deploy = payload.deploy || {};
     const log = deploy.output ? `<details><summary class="hint" style="cursor:pointer;margin-top:8px;">部署日志（${deploy.ms || 0} ms）</summary><pre>${esc(deploy.output)}</pre></details>` : '';
     if (ok) {
-      const head = editing ? (deploy.skipped ? '✅ 已保存到本地' : '✅ 已保存并发布') : '✅ 已发布';
+      const head = editing
+        ? (deploy.skipped ? '✅ 已保存到本地' : '✅ 已保存并发布')
+        : (deploy.skipped ? '✅ 已保存到本地' : '✅ 已发布');
       resultEl.innerHTML =
         `<div class="result ok">
           <div class="result-head">${head}</div>
@@ -451,24 +458,55 @@ console.log('代码块')
     try {
       // 标签不足 5 个时先补齐，用户能在标签框里看到补上了什么
       const tags = await fillTags(title, category, content);
-      const body = { category, title, content, tags, dryRun: localOnly || dryRunEl.checked };
-      const data = editing
-        ? await api('/api/post', {
+      const local = localOnly || dryRunEl.checked;
+      const body = { category, title, content, tags, dryRun: local };
+      let data;
+      if (editing) {
+        data = await api('/api/post', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(Object.assign({ file: EDIT_FILE }, body)),
+        });
+      } else if (currentFile) {
+        // 之前已在本机保存过（仅存本地或发布过）：更新同一篇，避免重复生成文件
+        try {
+          data = await api('/api/post', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(Object.assign({ file: EDIT_FILE }, body)),
-          })
-        : await api('/api/publish', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(body),
+            body: JSON.stringify(Object.assign({ file: currentFile }, body)),
           });
+        } catch (e) {
+          // 文件可能已被删，退回「新建」
+          if (/文件不存在|ENOENT|已被删除/.test(e.message || '')) {
+            currentFile = '';
+            data = await api('/api/publish', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body),
+            });
+          } else throw e;
+        }
+      } else {
+        data = await api('/api/publish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+      }
+      currentFile = (data && data.file) || currentFile;
       renderResult(true, data);
-      toast(`${editing ? '已保存' : '发布成功'} · ${Math.round((Date.now() - started) / 1000)}s`, 'ok');
+      toast(`${editing ? '已保存' : local ? '已保存到本地' : '发布成功'} · ${Math.round((Date.now() - started) / 1000)}s`, 'ok');
       if (!editing) {
-        localStorage.removeItem(DRAFT_KEY);
-        discardBtn.hidden = true;
-        saveStateEl.textContent = '已发布，草稿已清空';
+        if (local) {
+          // 仅存本地：文件已落盘，但保留本机草稿（含文件路径），下次打开可继续编辑
+          saveDraft();
+          saveStateEl.textContent = '已保存到本地，草稿保留（下次打开自动恢复）';
+        } else {
+          localStorage.removeItem(DRAFT_KEY);
+          currentFile = '';
+          discardBtn.hidden = true;
+          saveStateEl.textContent = '已发布，草稿已清空';
+        }
       } else {
         saveStateEl.textContent = data.deploy && data.deploy.skipped ? '已保存到本地，尚未发布' : '已保存并发布';
       }

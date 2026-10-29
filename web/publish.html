@@ -395,7 +395,7 @@ console.log('代码块')
         ? '（草稿已保存，不会发布上线）'
         : deploy.skipped ? '（仅写了本地文件，未推送）' : 'GitHub Actions 已触发，通常 30～60 秒后可访问';
       resultEl.innerHTML =
-        `<div class="result ok">
+        `<div class="result ${isDraft ? 'draft' : 'ok'}">
           <div class="result-head">${head}</div>
           <div class="result-line">文件：${esc(payload.file || '')}</div>
           <div class="result-line">线上：<a href="${esc(payload.permalink || '#')}" target="_blank" rel="noopener">${esc(payload.permalink || '')}</a></div>
@@ -507,8 +507,9 @@ console.log('代码块')
         });
       }
       currentFile = (data && data.file) || currentFile;
+      isCurrentDraft = isDraft;
       renderResult(true, data, isDraft ? 'draft' : 'publish');
-      toast(`${isDraft ? '草稿已保存' : (editing ? '已保存' : '发布成功')} · ${Math.round((Date.now() - started) / 1000)}s`, 'ok');
+      toast(`${isDraft ? '草稿已保存到本机' : (editing ? '已保存' : '发布成功')} · ${Math.round((Date.now() - started) / 1000)}s`, isDraft ? 'draft' : 'ok');
       if (!editing) {
         if (isDraft) {
           // 草稿文件已落盘，但保留本机草稿（含文件路径），下次打开可继续编辑
@@ -516,7 +517,6 @@ console.log('代码块')
           saveStateEl.textContent = '已保存为草稿（不会发布上线，可在「文章管理」里查看）';
         } else {
           localStorage.removeItem(DRAFT_KEY);
-          currentFile = '';
           discardBtn.hidden = true;
           saveStateEl.textContent = '已发布，草稿已清空';
         }
@@ -535,6 +535,13 @@ console.log('代码块')
     }
   }
 
+  // ⌘S 的语义：新文章存草稿；编辑时保持当前发布状态
+  // （已发布的文章按 ⌘S 不该被误存成草稿而从线上撤下，想转草稿走「保存草稿」按钮）
+  function shortcutMode() {
+    if (!editing) return 'draft';
+    return isCurrentDraft ? 'draft' : 'publish';
+  }
+
   publishBtn.addEventListener('click', () => submit('publish'));
   saveDraftBtn.addEventListener('click', () => submit('draft'));
 
@@ -546,7 +553,7 @@ console.log('代码块')
     }
     if (mod && e.key.toLowerCase() === 's') {
       e.preventDefault();
-      submit('draft');
+      submit(shortcutMode());
     }
   });
 
@@ -559,8 +566,8 @@ console.log('代码块')
     editFileEl.textContent = EDIT_FILE.replace(/^content\/posts\//, '');
     editFileEl.title = EDIT_FILE;
     publishBtn.textContent = '保存修改';
-    kbdHint.textContent = '⌘↵ 保存并发布 · ⌘S 存草稿';
-    kbdHint.title = '⌘/Ctrl + Enter 保存并发布，⌘/Ctrl + S 保存为草稿';
+    kbdHint.textContent = '⌘↵ 保存并发布 · ⌘S 保存（保持当前发布状态）';
+    kbdHint.title = '⌘/Ctrl + Enter 保存并发布；⌘/Ctrl + S 保存（已发布保持发布，草稿保持草稿）';
     saveStateEl.textContent = '读取中…';
     try {
       const data = await api('/api/post?file=' + encodeURIComponent(EDIT_FILE));

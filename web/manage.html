@@ -197,11 +197,11 @@
           const tags = p.tags.length ? `  #${esc(p.tags.slice(0, 2).join(' #'))}` : '';
           // data-pick / data-del 用「过滤后全局下标」，这样翻页/过滤后点击仍指向同一篇
           const g = start + i;
-          return `<tr data-file="${esc(p.file)}" class="${picked.has(p.file) ? 'is-picked' : ''}">
+          return `<tr data-file="${esc(p.file)}" class="${[picked.has(p.file) ? 'is-picked' : '', p.draft ? 'is-draft' : ''].join(' ').trim()}">
             <td class="col-check"><input type="checkbox" data-pick="${g}" ${picked.has(p.file) ? 'checked' : ''}></td>
             <td class="t-title">
-              <a href="${esc(p.permalink)}" target="_blank" rel="noopener" title="${esc(p.file)}">${esc(p.title)}</a>
-              <span class="num">${esc(p.file.replace(/^content\/posts\//, ''))}${tags}</span>${p.draft ? '<span class="badge-draft">草稿</span>' : ''}
+              <a href="${p.draft ? esc('/publish?file=' + encodeURIComponent(p.file)) : esc(p.permalink)}" ${p.draft ? '' : 'target="_blank" rel="noopener"'} title="${esc(p.draft ? '草稿尚未发布，点此继续编辑' : p.file)}">${esc(p.title)}</a>${p.draft ? '<span class="badge-draft" title="草稿：已保存但还没发布上线">草稿</span>' : ''}
+              <span class="num">${esc(p.file.replace(/^content\/posts\//, ''))}${tags}</span>
             </td>
             <td class="col-cat">${cats}</td>
             <td class="num col-date">${esc(p.date)}${p.time ? `<span class="t-time">${esc(p.time)}</span>` : ''}</td>

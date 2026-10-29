@@ -237,7 +237,7 @@ function cleanTags(tags, max = 8) {
   return out;
 }
 
-async function createPost({ category, title, content, tags }) {
+async function createPost({ category, title, content, tags, draft }) {
   const slug = sanitizeFilename(title);
   const catDir = await resolveCategoryDir(category);
   const dir = path.join(CONTENT_DIR, catDir);
@@ -264,7 +264,7 @@ async function createPost({ category, title, content, tags }) {
     `date: ${nowLocal()}\n` +
     `categories: [${JSON.stringify(catDir)}]\n` +
     (tagList ? `tags: [${tagList}]\n` : "") +
-    `draft: false\n---\n\n${String(content).replace(/\s+$/, "")}\n`;
+    `${draft ? "draft: true" : "draft: false"}\n---\n\n${String(content).replace(/\s+$/, "")}\n`;
 
   await fsp.writeFile(file, fm, "utf-8");
 
@@ -562,8 +562,10 @@ const server = http.createServer(async (req, res) => {
         title,
         content,
         tags: cleanTags(payload.tags),
+        draft: payload.draft === true,
       });
-      const deploy = await deployOrSkip(!shouldDeploy(payload));
+      // 草稿只写本地文件、不推送；正式发布才部署
+      const deploy = await deployOrSkip(payload.draft === true);
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         file: created.file,
@@ -625,8 +627,10 @@ const server = http.createServer(async (req, res) => {
         title,
         content,
         tags: cleanTags(payload.tags),
+        draft: typeof payload.draft === "boolean" ? payload.draft : undefined,
       });
-      const deploy = await deployOrSkip(!shouldDeploy(payload));
+      // 草稿只写本地文件、不推送；正式发布才部署
+      const deploy = await deployOrSkip(payload.draft === true);
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         saved: true,

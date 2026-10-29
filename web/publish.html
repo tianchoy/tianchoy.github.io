@@ -86,8 +86,8 @@ console.log('代码块')
       <span class="hint" id="saveState">草稿自动存在本机</span>
       <button class="btn btn-ghost btn-sm" id="btnDiscard" hidden>丢弃草稿</button>
       <span class="spacer"></span>
-      <span class="hint" id="kbdHint" title="⌘/Ctrl + Enter 直接发布">⌘↵ 发布</span>
-      <label class="switch"><input type="checkbox" id="dryRun">仅存本地</label>
+      <span class="hint" id="kbdHint" title="⌘/Ctrl + Enter 发布，⌘/Ctrl + S 保存草稿">⌘↵ 发布 · ⌘S 存草稿</span>
+      <button class="btn btn-ghost" id="btnSaveDraft">保存草稿</button>
       <button class="btn btn-primary" id="btnPublish">发布</button>
     </div>
   </section>
@@ -124,11 +124,11 @@ console.log('代码块')
   const saveStateEl = $('saveState');
   const discardBtn = $('btnDiscard');
   const publishBtn = $('btnPublish');
-  const dryRunEl = $('dryRun');
+  const saveDraftBtn = $('btnSaveDraft');
 
   const DRAFT_KEY = 'wb.draft.v1';
   const NEW_CAT = '__new__';
-  // 本篇在本机已保存过的文件路径（仅存本地或发布后记录），后续保存走「更新」而非重复新建
+  // 本篇在本机已保存过的文件路径（草稿或发布后记录），后续保存走「更新」而非重复新建
   let currentFile = '';
 
   // /publish?file=content/posts/xxx.md 进入编辑模式
@@ -138,6 +138,7 @@ console.log('代码块')
   const editFileEl = $('editFile');
   const kbdHint = $('kbdHint');
   let editDate = '';
+  let isCurrentDraft = false;
 
   /* ---------- 分类 ---------- */
 
@@ -381,19 +382,24 @@ console.log('代码块')
 
   /* ---------- 发布 ---------- */
 
-  function renderResult(ok, payload) {
+  function renderResult(ok, payload, mode) {
     const deploy = payload.deploy || {};
+    const isDraft = mode === 'draft';
     const log = deploy.output ? `<details><summary class="hint" style="cursor:pointer;margin-top:8px;">部署日志（${deploy.ms || 0} ms）</summary><pre>${esc(deploy.output)}</pre></details>` : '';
     if (ok) {
-      const head = editing
-        ? (deploy.skipped ? '✅ 已保存到本地' : '✅ 已保存并发布')
-        : (deploy.skipped ? '✅ 已保存到本地' : '✅ 已发布');
+      let head;
+      if (isDraft) head = '✅ 已保存为草稿';
+      else if (editing) head = deploy.skipped ? '✅ 已保存修改' : '✅ 已保存并发布';
+      else head = '✅ 已发布';
+      const line3 = isDraft
+        ? '（草稿已保存，不会发布上线）'
+        : deploy.skipped ? '（仅写了本地文件，未推送）' : 'GitHub Actions 已触发，通常 30～60 秒后可访问';
       resultEl.innerHTML =
         `<div class="result ok">
           <div class="result-head">${head}</div>
           <div class="result-line">文件：${esc(payload.file || '')}</div>
           <div class="result-line">线上：<a href="${esc(payload.permalink || '#')}" target="_blank" rel="noopener">${esc(payload.permalink || '')}</a></div>
-          <div class="result-line">${deploy.skipped ? '（仅写了本地文件，未推送）' : 'GitHub Actions 已触发，通常 30～60 秒后可访问'}</div>
+          <div class="result-line">${line3}</div>
           ${log}
         </div>`;
     } else {
@@ -437,8 +443,9 @@ console.log('代码块')
   }
 
   let publishing = false;
-  // localOnly=true 表示只写本地文件不推送（编辑模式下 ⌘S 用）
-  async function submit(localOnly) {
+  // mode = 'draft'（保存草稿：文件落盘，draft:true，不发布）或 'publish'（发布：draft:false 并部署）
+  async function submit(mode) {
+    const isDraft = mode === 'draft';
     if (publishing) return;
     const title = titleEl.value.trim();
     const category = catEl.value === NEW_CAT ? '' : catEl.value;
@@ -448,18 +455,24 @@ console.log('代码块')
     if (!category) { toast('选一个分类', 'err'); catEl.focus(); return; }
     if (!content.trim()) { toast('正文还是空的', 'err'); contentEl.focus(); return; }
 
+    // 编辑已发布文章时，若选「保存草稿」会把它从线上撤下，先确认一下
+    if (isDraft && editing && !isCurrentDraft) {
+      if (!confirm('这篇已是「已发布」状态，保存为草稿会让它从线上撤下。确定要转为草稿吗？')) return;
+    }
+
     publishing = true;
-    const original = publishBtn.textContent;
+    const activeBtn = isDraft ? saveDraftBtn : publishBtn;
+    const original = activeBtn.textContent;
     publishBtn.disabled = true;
-    publishBtn.textContent = localOnly ? '保存中…' : editing ? '保存中…' : '发布中…';
+    saveDraftBtn.disabled = true;
+    activeBtn.textContent = isDraft ? '存草稿中…' : (editing ? '保存中…' : '发布中…');
     saveDraft();
     const started = Date.now();
 
     try {
       // 标签不足 5 个时先补齐，用户能在标签框里看到补上了什么
       const tags = await fillTags(title, category, content);
-      const local = localOnly || dryRunEl.checked;
-      const body = { category, title, content, tags, dryRun: local };
+      const body = { category, title, content, tags, draft: isDraft };
       let data;
       if (editing) {
         data = await api('/api/post', {
@@ -468,7 +481,7 @@ console.log('代码块')
           body: JSON.stringify(Object.assign({ file: EDIT_FILE }, body)),
         });
       } else if (currentFile) {
-        // 之前已在本机保存过（仅存本地或发布过）：更新同一篇，避免重复生成文件
+        // 之前已在本机保存过（草稿或发布过）：更新同一篇，避免重复生成文件
         try {
           data = await api('/api/post', {
             method: 'POST',
@@ -494,13 +507,13 @@ console.log('代码块')
         });
       }
       currentFile = (data && data.file) || currentFile;
-      renderResult(true, data);
-      toast(`${editing ? '已保存' : local ? '已保存到本地' : '发布成功'} · ${Math.round((Date.now() - started) / 1000)}s`, 'ok');
+      renderResult(true, data, isDraft ? 'draft' : 'publish');
+      toast(`${isDraft ? '草稿已保存' : (editing ? '已保存' : '发布成功')} · ${Math.round((Date.now() - started) / 1000)}s`, 'ok');
       if (!editing) {
-        if (local) {
-          // 仅存本地：文件已落盘，但保留本机草稿（含文件路径），下次打开可继续编辑
+        if (isDraft) {
+          // 草稿文件已落盘，但保留本机草稿（含文件路径），下次打开可继续编辑
           saveDraft();
-          saveStateEl.textContent = '已保存到本地，草稿保留（下次打开自动恢复）';
+          saveStateEl.textContent = '已保存为草稿（不会发布上线，可在「文章管理」里查看）';
         } else {
           localStorage.removeItem(DRAFT_KEY);
           currentFile = '';
@@ -508,34 +521,32 @@ console.log('代码块')
           saveStateEl.textContent = '已发布，草稿已清空';
         }
       } else {
-        saveStateEl.textContent = data.deploy && data.deploy.skipped ? '已保存到本地，尚未发布' : '已保存并发布';
+        saveStateEl.textContent = isDraft ? '已保存为草稿（未发布）' : '已保存并发布';
       }
     } catch (e) {
-      renderResult(false, Object.assign({ error: e.message }, e.payload || {}));
-      toast(`${editing ? '保存' : '发布'}失败：` + e.message, 'err', 4200);
-      saveStateEl.textContent = editing ? '保存失败，改动还在编辑器里' : '发布失败，草稿仍保留';
+      renderResult(false, Object.assign({ error: e.message }, e.payload || {}), isDraft ? 'draft' : 'publish');
+      toast(`${isDraft ? '存草稿' : (editing ? '保存' : '发布')}失败：` + e.message, 'err', 4200);
+      saveStateEl.textContent = editing ? '保存失败，改动还在编辑器里' : '保存失败，草稿仍保留';
     } finally {
       publishing = false;
       publishBtn.disabled = false;
-      publishBtn.textContent = original;
+      saveDraftBtn.disabled = false;
+      activeBtn.textContent = original;
     }
   }
 
-  publishBtn.addEventListener('click', () => submit(false));
+  publishBtn.addEventListener('click', () => submit('publish'));
+  saveDraftBtn.addEventListener('click', () => submit('draft'));
 
   document.addEventListener('keydown', (e) => {
     const mod = e.metaKey || e.ctrlKey;
     if (mod && e.key === 'Enter') {
       e.preventDefault();
-      submit(false);
+      submit('publish');
     }
     if (mod && e.key.toLowerCase() === 's') {
       e.preventDefault();
-      if (editing) submit(true);
-      else {
-        saveDraft();
-        toast('草稿已保存到本机');
-      }
+      submit('draft');
     }
   });
 
@@ -548,8 +559,8 @@ console.log('代码块')
     editFileEl.textContent = EDIT_FILE.replace(/^content\/posts\//, '');
     editFileEl.title = EDIT_FILE;
     publishBtn.textContent = '保存修改';
-    kbdHint.textContent = '⌘↵ 保存';
-    kbdHint.title = '⌘/Ctrl + Enter 保存并发布，⌘/Ctrl + S 只写本地文件';
+    kbdHint.textContent = '⌘↵ 保存并发布 · ⌘S 存草稿';
+    kbdHint.title = '⌘/Ctrl + Enter 保存并发布，⌘/Ctrl + S 保存为草稿';
     saveStateEl.textContent = '读取中…';
     try {
       const data = await api('/api/post?file=' + encodeURIComponent(EDIT_FILE));
@@ -557,6 +568,7 @@ console.log('代码块')
       titleEl.value = p.title || '';
       contentEl.value = p.content || '';
       tagsEl.value = (p.tags || []).join(', ');
+      isCurrentDraft = !!p.draft;
       // 文章分类可能是手写在 frontmatter 里的，不在目录列表里就补一个选项
       const cat = (p.categories || [])[0] || '';
       if (cat && ![...catEl.options].some((o) => o.value === cat)) {

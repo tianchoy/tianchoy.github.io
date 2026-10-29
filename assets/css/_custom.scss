@@ -798,3 +798,33 @@ body[theme="dark"] {
 [theme=dark] .single .content code:not(pre code) {
   background: rgba(255, 255, 255, .1);
 }
+
+// 文章目录（服务端生成的扁平列表）：去掉默认列表样式，按标题级别缩进
+.toc .toc-list {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+}
+.toc .toc-item {
+  line-height: 1.9;
+}
+.toc .toc-item a {
+  color: $global-font-secondary-color;
+  &:hover,
+  &.active {
+    color: $global-link-color;
+  }
+}
+.toc .toc-h3 {
+  padding-left: .9rem;
+}
+.toc .toc-h4 {
+  padding-left: 1.8rem;
+}
+[theme=dark] .toc .toc-item a {
+  color: $global-font-secondary-color-dark;
+  &:hover,
+  &.active {
+    color: $global-link-color-dark;
+  }
+}

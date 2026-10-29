@@ -10,11 +10,24 @@
         {{- $toc = dict "enable" false -}}
     {{- end -}}
 
-    {{- /* Auto TOC */ -}}
-    {{- if ne $toc.enable false -}}
+    {{- /* 自定义文章目录：从正文 h2/h3/h4 标题提取，覆盖 Hugo 默认大纲不收录 h4 的限制。
+           生成扁平列表并按标题级别缩进；无标题的文章不渲染目录框。 */ -}}
+    {{- $tocRe := `<h([2-4]) id="([^"]+)"[^>]*>(.*?)</h[2-4]>` -}}
+    {{- $tocHeadings := findRE $tocRe .Content -}}
+    {{- $tocInner := "" -}}
+    {{- range $tocHeadings -}}
+        {{- $lv := replaceRE $tocRe "$1" . -}}
+        {{- $id := replaceRE $tocRe "$2" . -}}
+        {{- $txt := replaceRE $tocRe "$3" . | plainify -}}
+        {{- $tocInner = printf "%s<li class=\"toc-item toc-h%s\"><a href=\"#%s\">%s</a></li>" $tocInner $lv $id $txt -}}
+    {{- end -}}
+    {{- if $tocInner -}}{{- $tocInner = printf "<ul class=\"toc-list\">%s</ul>" $tocInner -}}{{- end -}}
+
+    {{- /* Auto TOC（桌面端右侧浮动） */ -}}
+    {{- if and (ne $toc.enable false) $tocHeadings -}}
         <div class="toc" id="toc-auto">
             <h2 class="toc-title">{{ T "contents" }}</h2>
-            <div class="toc-content{{ if eq $toc.auto false }} always-active{{ end }}" id="toc-content-auto"></div>
+            <div class="toc-content{{ if eq $toc.auto false }} always-active{{ end }}" id="toc-content-auto"><nav id="TableOfContents">{{ $tocInner | safeHTML }}</nav></div>
         </div>
     {{- end -}}
 
@@ -101,16 +114,14 @@
             </div>
         {{- end -}}
 
-        {{- /* Static TOC */ -}}
-        {{- if ne $toc.enable false -}}
+        {{- /* Static TOC（移动端折叠；主题 initToc 会把上面的 TableOfContents 移入此处） */ -}}
+        {{- if and (ne $toc.enable false) $tocHeadings -}}
             <div class="details toc" id="toc-static"  data-kept="{{ if $toc.keepStatic }}true{{ end }}">
                 <div class="details-summary toc-title">
                     <span>{{ T "contents" }}</span>
                     <span><i class="details-icon fas fa-angle-right" aria-hidden="true"></i></span>
                 </div>
-                <div class="details-content toc-content" id="toc-content-static">
-                    {{- dict "Content" .TableOfContents "Ruby" $params.ruby "Fraction" $params.fraction "Fontawesome" $params.fontawesome | partial "function/content.html" | safeHTML -}}
-                </div>
+                <div class="details-content toc-content" id="toc-content-static"></div>
             </div>
         {{- end -}}
 

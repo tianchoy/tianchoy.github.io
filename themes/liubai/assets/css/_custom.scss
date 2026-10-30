@@ -468,7 +468,10 @@ body[theme="dark"] {
 
 .tag-pill {
   display: inline-flex;
-  align-items: baseline;
+  // 不论主文字字号/字重档位（t1 更大更粗）还是计数数字（更小），
+  // 都用 flex 居中，保证标签内文字严格上下左右居中
+  align-items: center;
+  justify-content: center;
   gap: .35rem;
   padding: .32rem .78rem;
   font-size: .86rem;

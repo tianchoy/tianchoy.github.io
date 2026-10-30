@@ -34,9 +34,12 @@
 {{- $style := dict "Source" $source "Fingerprint" $fingerprint -}}
 {{- partial "plugin/style.html" $style -}}
 
-{{- /* style.min.css */ -}}
+{{- /* style.min.css — 用 Dart Sass（dartsass）编译，替换已弃用的 libsass。
+       dartsass 需要系统里有 `sass` 可执行文件：本机把原生 dart-sass 链到
+       /opt/homebrew/bin/sass；CI 在 deploy.yml 的 Install Dart Sass 步骤下载
+       官方 dart-sass 包并写入 $GITHUB_PATH。（Hugo 不认 npm 的 JS 版 sass） */ -}}
 {{- $style := dict "Source" "css/style.scss" "Fingerprint" $fingerprint -}}
-{{- $options := dict "targetPath" "css/style.min.css" "enableSourceMap" true -}}
+{{- $options := dict "targetPath" "css/style.min.css" "enableSourceMap" true "transpiler" "dartsass" -}}
 {{- $style = dict "Context" . "ToCSS" $options | merge $style -}}
 {{- partial "plugin/style.html" $style -}}
 

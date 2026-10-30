@@ -36,6 +36,15 @@ jobs:
           hugo-version: "0.169.0"
           extended: true
 
+      # dartsass 编译需要 PATH 里有原生 `sass` 可执行文件（Hugo 不自带 Dart Sass）。
+      # 注意：npm 的 sass 是 Node 包装版，Hugo 的 dartsass 只认原生二进制，
+      # 所以这里直接下载官方 dart-sass 的 linux-x64 发布包（与本机 1.83.4 对齐）。
+      - name: Install Dart Sass
+        run: |
+          curl -sSL https://github.com/sass/dart-sass/releases/download/1.83.4/dart-sass-1.83.4-linux-x64.tar.gz | tar -xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/dart-sass" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/dart-sass/sass" --version
+
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5

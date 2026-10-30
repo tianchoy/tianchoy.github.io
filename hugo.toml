@@ -38,8 +38,8 @@ summaryLength = 30
   title = "特严赤傲"
   description = "小田的博客,这是一些关于学习积累、问题笔记、代码分享、生活随笔等的记录。"
   # 站点级关键词：首页/列表页用。文章页自动改用该文的 tags。
-  # 2026-10-29 调整：原 Vue/React/Flutter 已无对应文章，换成贴合「随笔」内容的词。
-  keywords = ["随笔", "生活", "散文", "青春", "人生", "回忆", "自我", "博客", "记录", "思考", "前端", "摄影"]
+  # 2026-10-30 调整：按用户指定，聚焦「散文/随笔/个人博客/个人网站」定位。
+  keywords = ["散文", "随笔", "日记", "博客", "个人博客", "个人网站"]
 
   # 站内搜索：KeepIt 的 lunr 方案，索引为构建产物 /index.json
   # 中文分词由 assets/lib/lunr/lunr.segmentit.js 覆盖主题的 3.7MB 词典实现
@@ -78,7 +78,8 @@ summaryLength = 30
 
   [params.footer]
     enable = true
-    hugo = true
+    # 已去掉页脚 Hugo / 主题版权（模板也已移除该块）
+    hugo = false
     copyright = true
     author = true
     since = 2022
@@ -94,6 +95,8 @@ summaryLength = 30
     rss = 10
 
   [params.app]
+    # 不设的话主题默认输出 "My KeepIt site"（application-name / apple-mobile-web-app-title）
+    title = "特严赤傲"
     svgFavicon = "images/favicon.svg"
 
   [params.home]

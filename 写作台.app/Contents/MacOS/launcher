@@ -18,6 +18,7 @@ URL="http://127.0.0.1:${PORT}${OPEN_PATH}"
 LOG="$ROOT/.writing-desk.log"
 
 # 双击启动时 PATH 里没有 Homebrew / Bun，这里补齐
+# /opt/homebrew/bin/sass 指向原生 dart-sass，Hugo 用 dartsass 编译 SCSS 时需要它。
 export PATH="/opt/homebrew/bin:/usr/local/bin:${HOME}/.bun/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
 alive() {

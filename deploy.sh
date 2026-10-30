@@ -5,6 +5,13 @@
 # 然后把源码提交并推送到 tianchoy.github.io 仓库，由 Actions 构建并发布。
 set -e
 
+# dart-sass：dartsass 编译需要 PATH 里有 `sass`（原生 Dart Sass 二进制，不是 npm 的 JS 包装版）。
+# 终端双击/精简 PATH 时可能没有 Homebrew，这里补上（/opt/homebrew/bin/sass 指向原生 dart-sass）。
+if ! command -v sass >/dev/null 2>&1; then
+  PATH="/opt/homebrew/bin:$PATH"
+  export PATH
+fi
+
 # 本地构建校验，尽早发现模板/配置错误（public/ 不进入仓库）
 # 写作台是从 Finder 启动的，PATH 里可能没有 Homebrew，这里先确认 hugo 找得到
 if ! command -v hugo >/dev/null 2>&1; then

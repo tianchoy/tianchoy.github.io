@@ -798,3 +798,34 @@ body[theme="dark"] {
 [theme=dark] .single .content code:not(pre code) {
   background: rgba(255, 255, 255, .1);
 }
+
+// ==============================
+// 页脚：一行居中显示（统计 · 版权 · 作者 · 许可 · ICP）
+// 原来每块 .footer-line 各占整行、竖向堆叠；现在容器改 flex 行、子项不换行，
+// 窄屏放不下时自动折行。Hugo / KeepIt 主题版权块已在 footer.html 中移除。
+// ==============================
+.footer {
+  height: auto; // 交出行高，避免主题固定 2rem 把一行内容裁掉
+}
+
+.footer .footer-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: .25rem .9rem;
+  line-height: 1.9;
+
+  .footer-item,
+  .busuanzi-stats {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+  }
+
+  .busuanzi-sep {
+    margin: 0 .35rem;
+    opacity: .5;
+  }
+}
+

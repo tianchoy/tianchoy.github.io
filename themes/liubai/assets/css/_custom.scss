@@ -3,7 +3,8 @@
 // 自定义样式
 // ==============================
 
-// 文章列表项：行内 hover 背景 + 轻微右移，节奏更松弛
+// 文章列表项：整行即链接（<a class="archive-item">），padding 内任意位置都可点击
+// 行内 hover 背景 + 轻微右移，节奏更松弛
 .archive-item {
   display: flex;
   justify-content: space-between;
@@ -11,11 +12,13 @@
   margin: .2rem 0 .2rem .5rem;
   padding: .55rem .8rem;
   border-radius: .55rem;
+  text-decoration: none; // 整行作为 <a>，不让下划线铺满一行
   transition: background-color .25s ease, transform .25s ease;
 
   &:hover {
     background-color: rgba(125, 125, 125, .08);
     transform: translateX(.35rem);
+    text-decoration: none;
   }
 
   [theme=dark] & {
@@ -25,12 +28,19 @@
   }
 }
 
+.archive-item-title {
+  font-size: .95rem;
+  transition: color .2s ease;
+}
+
+// 分类页卡片内仍用 <article><a class="archive-item-link"> 的旧结构，保留其样式
 .archive-item-link {
   font-size: .95rem;
   transition: color .2s ease;
 }
 
 // 日期：英文月份，数字等宽对齐，靠右
+// 整行变成链接后日期会继承链接色（偏蓝），这里拉回次级色，保持「标题醒目、日期退后」的层级
 .archive-item-date {
   width: auto;
   padding-left: 1rem;
@@ -38,6 +48,11 @@
   font-size: .85rem;
   letter-spacing: .02em;
   font-variant-numeric: tabular-nums;
+  color: $global-font-secondary-color;
+
+  [theme=dark] & {
+    color: $global-font-secondary-color-dark;
+  }
 }
 
 // 年份分组标题：放大、减细，作为优雅的分区标记

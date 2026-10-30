@@ -86,12 +86,12 @@ summaryLength = 30
 
   [params.section]
     paginate = 20
-    dateFormat = "01-02"
+    dateFormat = "Jan 02"
     rss = 10
 
   [params.list]
     paginate = 20
-    dateFormat = "01-02"
+    dateFormat = "Jan 02"
     rss = 10
 
   [params.app]

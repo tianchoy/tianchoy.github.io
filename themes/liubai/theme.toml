@@ -1,37 +1,33 @@
-# theme.toml template for a Hugo theme
+# theme.toml for a Hugo theme
 
 name = "LiuBai"
 license = "MIT"
-licenselink = "https://github.com/Fastbyte01/KeepIt/blob/master/LICENSE"
-description = "A Clean, Elegant but Advanced Hugo Theme (renamed from KeepIt to LiuBai)."
-
-homepage = "https://giuseppep.it"
-demosite = "https://suspicious-archimedes-ab369d.netlify.app/"
+licenselink = "https://opensource.org/licenses/MIT"
+description = "A clean, elegant, and minimal Hugo theme, inspired by the Chinese aesthetic of 留白 (negative space / whitespace)."
+homepage = "https://tianchoy.github.io/"
+demosite = "https://tianchoy.github.io/"
 
 tags = [
   "blog",
   "clean",
+  "minimal",
   "responsive",
   "dark",
   "theme"
 ]
 features = [
-  "cover-image",
+  "clean-design",
   "favicon",
   "multilingual",
   "pagination",
   "social-menu",
   "syntax-highlighting",
-  "SEO Optimized"
+  "SEO Optimized",
+  "dark-mode"
 ]
 
 min_version = "0.62.0"
 
 [author]
-  name = "Dillon"
-  homepage = "https://giuseppep.it/"
-
-[original]
-  name = "Fastbyte01"
-  homepage = "https://www.fsb01.com/"
-  repo = "https://github.com/Fastbyte01/KeepIt"
+  name = "tianchoy"
+  homepage = "https://tianchoy.github.io/"

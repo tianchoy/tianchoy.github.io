@@ -1,6 +1,6 @@
 # 特严赤傲 · 博客
 
-基于 [Hugo](https://gohugo.io/) + [KeepIt](https://github.com/Fastbyte01/KeepIt) 的静态博客。
+基于 [Hugo](https://gohugo.io/) + liubai 主题（由 [KeepIt](https://github.com/Fastbyte01/KeepIt) 改名而来，vendored）的静态博客。
 **源码与发布都在本仓库**（`tianchoy.github.io`），推送到 `main` 即由 GitHub Actions 自动构建并部署。
 
 访问地址：https://tianchoy.github.io/
@@ -44,7 +44,7 @@ bash deploy.sh
 | `content/posts/` | 文章（按分类分目录） |
 | `content/about.md` | 关于页 |
 | `hugo.toml` | 站点配置（含导航、社交、页脚统计） |
-| `themes/keepit/` | 主题（vendored） |
+| `themes/liubai/` | 主题（vendored，由 KeepIt 改名） |
 | `assets/css/_custom.scss` | 自定义样式覆写 |
 | `layouts/` | 模板覆写（about 页、页脚、统计 partial） |
 | `写作台.app` | 可双击的本地写作台启动器 |

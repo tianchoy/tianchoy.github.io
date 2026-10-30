@@ -1,6 +1,6 @@
 baseURL = "https://tianchoy.github.io/"
 title = "特严赤傲"
-theme = "keepit"
+theme = "liubai"
 locale = "zh-CN"
 defaultContentLanguage = "zh-cn"
 enableEmoji = true
@@ -20,7 +20,7 @@ summaryLength = 30
 [pagination]
   pagerSize = 10
 
-# 生成首页 JSON 搜索索引（KeepIt 的 lunr 搜索需要 /index.json）
+# 生成首页 JSON 搜索索引（主题 lunr 搜索需要 /index.json）
 [outputs]
   home = ["HTML", "JSON"]
 
@@ -41,7 +41,7 @@ summaryLength = 30
   # 2026-10-30 调整：按用户指定，聚焦「散文/随笔/个人博客/个人网站」定位。
   keywords = ["散文", "随笔", "日记", "博客", "个人博客", "个人网站"]
 
-  # 站内搜索：KeepIt 的 lunr 方案，索引为构建产物 /index.json
+  # 站内搜索：主题的 lunr 方案，索引为构建产物 /index.json
   # 中文分词由 assets/lib/lunr/lunr.segmentit.js 覆盖主题的 3.7MB 词典实现
   [params.search]
     enable = true
@@ -95,7 +95,7 @@ summaryLength = 30
     rss = 10
 
   [params.app]
-    # 不设的话主题默认输出 "My KeepIt site"（application-name / apple-mobile-web-app-title）
+    # 不设的话主题默认输出 "My LiuBai site"（application-name / apple-mobile-web-app-title）
     title = "特严赤傲"
     svgFavicon = "images/favicon.svg"
 

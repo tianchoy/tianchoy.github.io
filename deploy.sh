@@ -5,12 +5,12 @@
 # 然后把源码提交并推送到 tianchoy.github.io 仓库，由 Actions 构建并发布。
 set -e
 
-# dart-sass：dartsass 编译需要 PATH 里有 `sass`（原生 Dart Sass 二进制，不是 npm 的 JS 包装版）。
-# 终端双击/精简 PATH 时可能没有 Homebrew，这里补上（/opt/homebrew/bin/sass 指向原生 dart-sass）。
-if ! command -v sass >/dev/null 2>&1; then
-  PATH="/opt/homebrew/bin:$PATH"
-  export PATH
-fi
+# dart-sass：dartsass 编译需要 PATH 里有 `sass`（原生 Dart Sass 二进制）。
+# 注意：rvm 也会提供一个 Ruby 包装版的 `sass`，会让 Hugo 的 dartsass 协议报
+# "got unexpected EOF when executing sass"。所以无论 PATH 里是否已存在某个
+# sass，都强制把 /opt/homebrew/bin 放在最前（那里的 sass 是指向 sass-embedded
+# 原生二进制的符号链接 /opt/homebrew/bin/sass -> .../dart-sass/sass）。
+export PATH="/opt/homebrew/bin:$PATH"
 
 # 本地构建校验，尽早发现模板/配置错误（public/ 不进入仓库）
 # 写作台是从 Finder 启动的，PATH 里可能没有 Homebrew，这里先确认 hugo 找得到

@@ -5,3 +5,4 @@
 .hugo_build.lock
 .writing-desk.log
 .comments-auth.json
+.deploy-auth.json

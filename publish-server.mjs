@@ -34,6 +34,14 @@ import {
   setCommentStatus,
   deleteComment,
 } from "./lib/comments.mjs";
+import {
+  readDeployConfig,
+  saveDeployConfig,
+  triggerDeploy,
+  deployState,
+  deploysPageURL,
+  siteName,
+} from "./lib/netlify.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(ROOT, "public");
@@ -664,9 +672,60 @@ const server = http.createServer(async (req, res) => {
             failed.push({ id, error: e.message });
           }
         }
-        return sendJSON(res, 200, { ok: failed.length === 0, deleted: done.length, failed });
+        // 把逐条失败原因拼进顶层 error，前端才不会只看到一句没信息量的「删除失败」
+        const errText = failed.map((f) => `#${f.id}：${f.error}`).join("；");
+        return sendJSON(res, 200, {
+          ok: failed.length === 0,
+          deleted: done.length,
+          failed,
+          error: errText || "",
+        });
       } catch (e) {
         return sendJSON(res, 200, { ok: false, error: e.message, deleted: 0 });
+      }
+    }
+
+    // —— Netlify 部署（评论服务端推到 GitHub 不会自动构建，需要手动触发）
+    if (pathname === "/api/netlify" && req.method === "GET") {
+      const cfg = await readDeployConfig();
+      const name = await siteName().catch(() => "");
+      return sendJSON(res, 200, {
+        ok: true,
+        site: name,
+        hasHook: !!cfg.buildHook,
+        hasToken: !!cfg.token,
+        deploysURL: await deploysPageURL().catch(() => "https://app.netlify.com/"),
+      });
+    }
+
+    if (pathname === "/api/netlify/config" && req.method === "POST") {
+      const payload = await readJSON(req);
+      const old = await readDeployConfig();
+      const reset = payload.reset === true;
+      // 前端不回显已保存的密钥，输入框留空表示「保持原样」；
+      // 只有显式 reset 才清空。
+      await saveDeployConfig({
+        buildHook: reset ? "" : String(payload.buildHook || "").trim() || old.buildHook,
+        token: reset ? "" : String(payload.token || "").trim() || old.token,
+      });
+      return sendJSON(res, 200, { ok: true });
+    }
+
+    if (pathname === "/api/netlify/deploy" && req.method === "POST") {
+      try {
+        const data = await triggerDeploy();
+        return sendJSON(res, 200, { ok: true, ...data });
+      } catch (e) {
+        return sendJSON(res, 200, { ok: false, error: e.message });
+      }
+    }
+
+    if (pathname === "/api/netlify/state" && req.method === "GET") {
+      try {
+        const data = await deployState();
+        return sendJSON(res, 200, data);
+      } catch (e) {
+        return sendJSON(res, 200, { ok: false, error: e.message });
       }
     }
 

@@ -712,9 +712,11 @@ body[theme="dark"] {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 1.6rem;
-    height: 1.6rem;
-    font-size: 1.4rem;
+    // 圆形底要比图标明显大一圈：图标按正方形算，内切于圆的边长最大为 直径/√2，
+    // 2rem 圆最多容下 ~1.41rem 的正方形图标，取 1.3rem 留出余量，hover 时圆才包得住
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.3rem;
     line-height: 1;
     border-radius: 50%;
     color: $global-font-secondary-color;
@@ -735,8 +737,8 @@ body[theme="dark"] {
     svg,
     img,
     .icon {
-      width: 1.25rem;
-      height: 1.25rem;
+      width: 1.1rem;
+      height: 1.1rem;
       display: block;
     }
   }
@@ -833,7 +835,8 @@ body[theme="dark"] {
     gap: .35rem .7rem;
 
     a {
-      display: inline-block;
+      // 不在这里覆盖 display：父级 .home-profile .links a 的 inline-flex + 居中
+      // 负责让图标在圆内居中；这里只加首页特有的位移/淡出过渡
       transition: transform .25s ease, opacity .25s ease, color .25s ease;
 
       &:hover {
@@ -878,6 +881,18 @@ body[theme="dark"] {
 }
 
 // ==============================
+// 文章详情页底部：上下篇标题
+// 主题写死 1rem / 600，视觉上比正文还抢眼；压到正文之下、常规字重，
+// 只在 hover 时靠颜色和位移提示可点。
+// ==============================
+.post-footer .post-nav {
+  a.prev,
+  a.next {
+    font-size: .9rem;
+    font-weight: 400;
+  }
+}
+
 // 页脚：一行居中显示（统计 · 版权 · 作者 · 许可 · ICP）
 // 原来每块 .footer-line 各占整行、竖向堆叠；现在容器改 flex 行、子项不换行，
 // 窄屏放不下时自动折行。Hugo / KeepIt 主题版权块已在 footer.html 中移除。

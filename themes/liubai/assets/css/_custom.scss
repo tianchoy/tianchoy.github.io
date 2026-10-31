@@ -899,6 +899,14 @@ body[theme="dark"] {
 // 主题色对齐站点链接色；圆角与站点卡片一致。暗色由 Waline 自己根据
 // dark 选择器切换（它自带一套暗色变量），这里只补它没有覆盖的两项。
 // ==============================
+// 主题给 #comments 的 padding 是 8rem 0 2rem（约 128px），文章底部到评论框之间
+// 会空出一大块，两者像是两个页面。收到 2.5rem，让评论成为文章的自然延续。
+// 选择器必须带 .single：主题写的是 .single #comments（0,1,1），
+// 只写 #comments 会被它压过，改了也不生效。
+.single #comments {
+  padding: 2.5rem 0 2rem;
+}
+
 #waline {
   --waline-theme-color: #{$single-link-color};
   --waline-active-color: #{$single-link-hover-color};

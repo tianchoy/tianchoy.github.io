@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>评论管理 · 写作台</title>
+<link rel="stylesheet" href="/ui/ui.css">
+<style>
+  /* 评论正文：评论接口返回的是 HTML 片段，这里只当纯文本展示，
+     所以统一用等宽之外的正文样式，并限制最多 4 行，避免长评论把表格撑高 */
+  .cmt-text {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.55;
+    color: var(--fg, #333);
+  }
+  .cmt-text.is-open {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+  }
+  .cmt-meta {
+    display: block;
+    margin-top: .25rem;
+    font-size: .78rem;
+    opacity: .62;
+  }
+  .cmt-where {
+    font-size: .8rem;
+    word-break: break-all;
+  }
+  .badge-status {
+    display: inline-block;
+    padding: .1rem .45rem;
+    border-radius: 999px;
+    font-size: .72rem;
+    border: 1px solid rgba(128, 128, 128, .35);
+  }
+  .badge-status.waiting { border-color: #d9a406; color: #a87c00; }
+  .badge-status.spam { border-color: #d9534f; color: #c9302c; }
+  .auth-card { max-width: 520px; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="/publish">
+      <span class="brand-mark">写</span>
+      <span class="brand-text">写作台<em>特严赤傲</em></span>
+    </a>
+    <nav class="nav">
+      <a class="nav-link" data-page="publish" href="/publish">写文章</a>
+      <a class="nav-link" data-page="manage" href="/manage">文章管理</a>
+      <a class="nav-link" data-page="comments" href="/comments">评论管理</a>
+      <a class="nav-link" data-page="about" href="/edit/about">关于页</a>
+      <a class="nav-link" data-page="admin" href="/admin">站点设置</a>
+      <a class="nav-link" href="/" target="_blank">预览站点 ↗</a>
+    </nav>
+    <div class="topbar-right">
+      <span class="status-chip">本地服务运行中</span>
+      <button class="btn btn-ghost btn-sm" id="btnShutdown">关闭服务</button>
+    </div>
+  </div>
+</header>
+
+<main class="page wide">
+  <div class="page-head">
+    <h1>评论管理</h1>
+    <p>直接读写 Waline 服务端（Neon PostgreSQL）。管理员账号只存在本机 <code style="font-family:var(--mono)">.comments-auth.json</code>，不会写进仓库；服务地址取自 <code style="font-family:var(--mono)">hugo.toml</code> 的 <code style="font-family:var(--mono)">params.page.comment.waline.serverURL</code>。</p>
+  </div>
+
+  <div id="result"></div>
+
+  <!-- 未配置服务地址 -->
+  <section class="card" id="cardNoServer" hidden>
+    <div class="card-head"><h2 class="card-title">还没接评论服务</h2></div>
+    <div class="card-body">
+      <p class="hint" id="noServerHint"></p>
+    </div>
+  </section>
+
+  <!-- 未配置管理员账号 -->
+  <section class="card auth-card" id="cardAuth" hidden>
+    <div class="card-head"><h2 class="card-title">登录评论后台</h2></div>
+    <div class="card-body">
+      <p class="hint" style="margin-bottom:14px;">填 Waline 管理员的邮箱和密码（就是登录 <code style="font-family:var(--mono)">/ui</code> 用的那组）。只保存在本机，不会提交到仓库。</p>
+      <div class="form-grid">
+        <div class="field full">
+          <label for="authEmail">邮箱</label>
+          <input id="authEmail" type="email" placeholder="you@example.com" autocomplete="off">
+        </div>
+        <div class="field full">
+          <label for="authPassword">密码</label>
+          <input id="authPassword" type="password" placeholder="管理员密码" autocomplete="off">
+        </div>
+      </div>
+      <div class="action-bar">
+        <span class="hint" id="authHint"></span>
+        <span class="spacer"></span>
+        <button class="btn btn-primary" id="btnSaveAuth">保存并验证</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 评论列表 -->
+  <section class="card" id="cardList" hidden>
+    <div class="filter-bar">
+      <div class="search">
+        <input type="text" id="q" placeholder="搜索昵称、邮箱或评论内容…" autocomplete="off">
+      </div>
+      <select id="status">
+        <option value="approved">已通过</option>
+        <option value="waiting">待审核</option>
+        <option value="spam">垃圾</option>
+      </select>
+      <span class="count" id="count">加载中…</span>
+      <button class="btn btn-ghost btn-sm" id="btnReload">刷新</button>
+    </div>
+
+    <div class="sel-bar" id="selBar" hidden>
+      <span id="selText"></span>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost btn-sm" id="btnClearSel">取消选择</button>
+      <button class="btn btn-ghost btn-sm" id="btnApproveSel">标记通过</button>
+      <button class="btn btn-ghost btn-sm" id="btnSpamSel">标记垃圾</button>
+      <button class="btn btn-danger btn-sm" id="btnDeleteSel">删除选中</button>
+    </div>
+
+    <div class="table-wrap">
+      <table class="post-table">
+        <thead>
+          <tr>
+            <th class="col-check"><input type="checkbox" id="checkAll" title="全选本页"></th>
+            <th class="col-cat">作者</th>
+            <th>内容</th>
+            <th class="col-cat">所在文章</th>
+            <th class="col-date">时间</th>
+            <th class="t-act">操作</th>
+          </tr>
+        </thead>
+        <tbody id="rows">
+          <tr><td colspan="6" class="num" style="text-align:center;padding:26px;">加载中…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pager" id="pager" hidden></div>
+  </section>
+
+  <div class="action-bar">
+    <span class="hint" id="footHint"></span>
+    <span class="spacer"></span>
+    <button class="btn btn-ghost btn-sm" id="btnOpenAdmin">在浏览器打开官方后台 ↗</button>
+  </div>
+</main>
+
+<script src="/ui/ui.js"></script>
+<script>
+(function () {
+  const { api, toast, esc, initTopbar } = window.WB;
+  initTopbar();
+
+  const $ = (id) => document.getElementById(id);
+  const rowsEl = $('rows');
+  const qEl = $('q');
+  const statusEl = $('status');
+  const countEl = $('count');
+  const resultEl = $('result');
+  const selBar = $('selBar');
+  const selText = $('selText');
+  const checkAll = $('checkAll');
+  const footHint = $('footHint');
+  const cardNoServer = $('cardNoServer');
+  const cardAuth = $('cardAuth');
+  const cardList = $('cardList');
+
+  let items = [];
+  let picked = new Set();
+  let busy = false;
+  let serverURL = '';
+  let page = 1;
+  let totalPages = 1;
+  let counts = { spam: 0, waiting: 0 };
+
+  // 评论正文是 HTML 片段，展示前剥掉标签（服务端已做过 XSS 过滤，这里只求排版干净）
+  const toText = (html) => {
+    const div = document.createElement('div');
+    div.innerHTML = String(html || '');
+    return (div.textContent || '').replace(/\s+/g, ' ').trim();
+  };
+
+  const fmtTime = (ms) => {
+    if (!ms) return '—';
+    const d = new Date(Number(ms));
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+  };
+
+  const statusLabel = { approved: '已通过', waiting: '待审核', spam: '垃圾' };
+
+  /* ---------- 渲染 ---------- */
+
+  function render() {
+    if (!items.length) {
+      rowsEl.innerHTML = `<tr><td colspan="6" class="num" style="text-align:center;padding:26px;">这个状态下还没有评论</td></tr>`;
+    } else {
+      rowsEl.innerHTML = items
+        .map((c) => {
+          const pickedCls = picked.has(c.objectId) ? 'is-picked' : '';
+          const where = c.url
+            ? `<a class="cmt-where" href="${esc('https://tianchoy.github.io' + c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a>`
+            : '<span class="num">—</span>';
+          const badge = c.status && c.status !== 'approved'
+            ? ` <span class="badge-status ${esc(c.status)}">${esc(statusLabel[c.status] || c.status)}</span>`
+            : '';
+          const meta = [c.addr, c.browser, c.os].filter(Boolean).join(' · ');
+          return `<tr data-id="${esc(c.objectId)}" class="${pickedCls}">
+            <td class="col-check"><input type="checkbox" data-pick="${esc(c.objectId)}" ${picked.has(c.objectId) ? 'checked' : ''}></td>
+            <td class="col-cat">
+              <div>${esc(c.nick || '匿名')}${badge}</div>
+              <span class="num">${esc(c.mail || '')}</span>
+            </td>
+            <td>
+              <div class="cmt-text" data-text>${esc(toText(c.comment))}</div>
+              ${meta ? `<span class="cmt-meta">${esc(meta)}</span>` : ''}
+            </td>
+            <td class="col-cat">${where}</td>
+            <td class="num col-date">${fmtTime(c.time)}</td>
+            <td class="t-act">
+              <span class="act-group">
+                ${c.status !== 'approved' ? `<button class="btn btn-ghost btn-sm" data-act="approved" data-id="${esc(c.objectId)}">通过</button>` : ''}
+                ${c.status !== 'spam' ? `<button class="btn btn-ghost btn-sm" data-act="spam" data-id="${esc(c.objectId)}">垃圾</button>` : ''}
+                <button class="btn btn-danger btn-sm" data-act="delete" data-id="${esc(c.objectId)}">删除</button>
+              </span>
+            </td>
+          </tr>`;
+        })
+        .join('');
+    }
+
+    const total = picked.size;
+    selBar.hidden = total === 0;
+    selText.textContent = `已选 ${total} 条`;
+    checkAll.checked = items.length > 0 && items.every((c) => picked.has(c.objectId));
+    checkAll.indeterminate = !checkAll.checked && items.some((c) => picked.has(c.objectId));
+
+    countEl.textContent = `第 ${page} / ${totalPages} 页 · 待审核 ${counts.waiting || 0} · 垃圾 ${counts.spam || 0}`;
+    footHint.textContent = `服务端：${serverURL}`;
+  }
+
+  function renderPager() {
+    const pager = $('pager');
+    if (totalPages <= 1) {
+      pager.hidden = true;
+      return;
+    }
+    pager.hidden = false;
+    let html = `<button class="btn btn-ghost btn-sm" data-nav="prev" ${page <= 1 ? 'disabled' : ''}>‹ 上一页</button>`;
+    html += `<span class="pager-info">第 ${page} / ${totalPages} 页</span>`;
+    html += `<button class="btn btn-ghost btn-sm" data-nav="next" ${page >= totalPages ? 'disabled' : ''}>下一页 ›</button>`;
+    pager.innerHTML = html;
+  }
+
+  /* ---------- 交互 ---------- */
+
+  rowsEl.addEventListener('click', async (e) => {
+    const btn = e.target.closest('[data-act]');
+    if (btn) {
+      const id = btn.dataset.id;
+      const act = btn.dataset.act;
+      if (act === 'delete') {
+        if (!confirm('删除这条评论？操作不可撤销。')) return;
+        await doDelete([id]);
+      } else {
+        await doUpdate([id], act);
+      }
+      return;
+    }
+    const box = e.target.closest('[data-pick]');
+    if (box) {
+      const id = Number(box.dataset.pick);
+      if (box.checked) picked.add(id);
+      else picked.delete(id);
+      render();
+    }
+  });
+
+  checkAll.addEventListener('change', () => {
+    if (checkAll.checked) items.forEach((c) => picked.add(c.objectId));
+    else items.forEach((c) => picked.delete(c.objectId));
+    render();
+  });
+
+  $('pager').addEventListener('click', (e) => {
+    const nav = e.target.closest('[data-nav]');
+    if (!nav) return;
+    if (nav.dataset.nav === 'prev' && page > 1) page--;
+    else if (nav.dataset.nav === 'next' && page < totalPages) page++;
+    else return;
+    load();
+  });
+
+  $('btnClearSel').addEventListener('click', () => { picked.clear(); render(); });
+  $('btnReload').addEventListener('click', () => load());
+  $('btnApproveSel').addEventListener('click', () => doUpdate([...picked], 'approved'));
+  $('btnSpamSel').addEventListener('click', () => doUpdate([...picked], 'spam'));
+  $('btnDeleteSel').addEventListener('click', async () => {
+    const ids = [...picked];
+    if (!ids.length) return;
+    if (!confirm(`删除选中的 ${ids.length} 条评论？操作不可撤销。`)) return;
+    await doDelete(ids);
+  });
+
+  let filterTimer = null;
+  qEl.addEventListener('input', () => {
+    clearTimeout(filterTimer);
+    filterTimer = setTimeout(() => { page = 1; load(); }, 350);
+  });
+  statusEl.addEventListener('change', () => { page = 1; picked.clear(); load(); });
+
+  $('btnSaveAuth').addEventListener('click', async () => {
+    const email = $('authEmail').value.trim();
+    const password = $('authPassword').value;
+    if (!email || !password) {
+      $('authHint').textContent = '邮箱和密码都要填';
+      return;
+    }
+    $('authHint').textContent = '正在验证…';
+    try {
+      const data = await api('/api/comments/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      if (!data.ok) throw new Error(data.error || '验证失败');
+      $('authPassword').value = '';
+      toast('已保存管理员账号');
+      cardAuth.hidden = true;
+      await load();
+    } catch (e) {
+      $('authHint').textContent = e.message;
+      toast('登录失败：' + e.message, 'err', 4200);
+    }
+  });
+
+  $('btnOpenAdmin').addEventListener('click', () => {
+    if (!serverURL) return toast('还没有评论服务地址', 'err');
+    window.open(serverURL + '/ui', '_blank', 'noopener');
+  });
+
+  /* ---------- 请求 ---------- */
+
+  function renderResult(kind, head, lines) {
+    resultEl.innerHTML = `<div class="result ${kind}">
+        <div class="result-head">${head}</div>
+        ${lines.map((l) => `<div class="result-line">${esc(l)}</div>`).join('')}
+      </div>`;
+  }
+
+  async function doUpdate(ids, status) {
+    if (busy || !ids.length) return;
+    busy = true;
+    try {
+      const data = await api('/api/comments/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, status }),
+      });
+      if (!data.ok) throw new Error(data.error || '更新失败');
+      picked.clear();
+      await load();
+      toast(`已标记为「${statusLabel[status] || status}」`);
+    } catch (e) {
+      toast('操作失败：' + e.message, 'err', 4200);
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function doDelete(ids) {
+    if (busy || !ids.length) return;
+    busy = true;
+    try {
+      const data = await api('/api/comments/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (!data.ok && !data.deleted) throw new Error(data.error || '删除失败');
+      picked.clear();
+      await load();
+      const extra = data.failed && data.failed.length ? data.failed.map((f) => `#${f.id}：${f.error}`) : [];
+      renderResult('ok', `✅ 已删除 ${data.deleted} 条`, extra);
+      toast(`已删除 ${data.deleted} 条`);
+    } catch (e) {
+      toast('删除失败：' + e.message, 'err', 4200);
+    } finally {
+      busy = false;
+    }
+  }
+
+  async function load() {
+    const params = new URLSearchParams({
+      status: statusEl.value,
+      keyword: qEl.value.trim(),
+      page: String(page),
+    });
+    try {
+      const data = await api('/api/comments?' + params.toString());
+      serverURL = data.serverURL || '';
+      $('btnOpenAdmin').hidden = !serverURL;
+
+      if (!data.serverURL) {
+        cardNoServer.hidden = false;
+        cardAuth.hidden = true;
+        cardList.hidden = true;
+        $('noServerHint').textContent = data.error || 'hugo.toml 里还没填评论服务地址。';
+        return;
+      }
+      cardNoServer.hidden = true;
+
+      if (!data.hasAuth) {
+        cardAuth.hidden = false;
+        cardList.hidden = true;
+        $('authEmail').value = data.email || '';
+        return;
+      }
+      cardAuth.hidden = true;
+      cardList.hidden = false;
+
+      if (data.error) {
+        countEl.textContent = '读取失败';
+        rowsEl.innerHTML = `<tr><td colspan="6" class="num" style="text-align:center;padding:26px;">${esc(data.error)}</td></tr>`;
+        return;
+      }
+
+      const d = data.data || {};
+      items = d.data || [];
+      totalPages = d.totalPages || 1;
+      counts = { spam: d.spamCount || 0, waiting: d.waitingCount || 0 };
+      render();
+      renderPager();
+    } catch (e) {
+      countEl.textContent = '读取失败';
+      rowsEl.innerHTML = `<tr><td colspan="6" class="num" style="text-align:center;padding:26px;">${esc(e.message)}</td></tr>`;
+    }
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>

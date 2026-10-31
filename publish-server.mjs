@@ -25,6 +25,15 @@ import {
 import { listPosts, deletePosts, readPost, savePost, postPermalink } from "./lib/posts.mjs";
 import { readAboutPage, saveAboutPage } from "./lib/about.mjs";
 import { suggestTags } from "./lib/auto-tags.mjs";
+import {
+  readAuth as readCommentsAuth,
+  saveAuth as saveCommentsAuth,
+  walineServerURL,
+  verifyAuth,
+  listComments,
+  setCommentStatus,
+  deleteComment,
+} from "./lib/comments.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(ROOT, "public");
@@ -64,6 +73,7 @@ const PAGES = {
   // 不能直接用 /about：会和构建产物预览里的 /about/index.html 抢路由
   "/edit/about": "about.html",
   "/admin": "admin.html",
+  "/comments": "comments.html",
 };
 
 // ---------- 基础工具 ----------
@@ -582,6 +592,82 @@ const server = http.createServer(async (req, res) => {
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
         deploy,
       });
+    }
+
+    // —— 评论管理（转发 Waline 管理接口，凭证只存在本机）
+    if (pathname === "/api/comments" && req.method === "GET") {
+      const auth = await readCommentsAuth();
+      const serverURL = await walineServerURL().catch(() => "");
+      const base = {
+        ok: true,
+        serverURL,
+        hasAuth: !!(auth.email && auth.password),
+        email: auth.email,
+      };
+      if (!serverURL) return sendJSON(res, 200, { ...base, error: "hugo.toml 里还没有配置评论服务地址" });
+      if (!base.hasAuth) return sendJSON(res, 200, { ...base, error: "还没有配置评论管理员账号" });
+      try {
+        const data = await listComments({
+          status: url.searchParams.get("status") || "approved",
+          keyword: url.searchParams.get("keyword") || "",
+          page: Number(url.searchParams.get("page")) || 1,
+        });
+        return sendJSON(res, 200, { ...base, data });
+      } catch (e) {
+        return sendJSON(res, 200, { ...base, error: e.message });
+      }
+    }
+
+    if (pathname === "/api/comments/auth" && req.method === "POST") {
+      const payload = await readJSON(req);
+      const email = String(payload.email || "").trim();
+      const password = String(payload.password || "");
+      if (!email || !password) return sendJSON(res, 400, { ok: false, error: "邮箱和密码都要填" });
+      try {
+        await verifyAuth(email, password);
+        await saveCommentsAuth(email, password);
+        return sendJSON(res, 200, { ok: true, email });
+      } catch (e) {
+        return sendJSON(res, 200, { ok: false, error: e.message || "登录失败" });
+      }
+    }
+
+    if (pathname === "/api/comments/update" && req.method === "POST") {
+      const payload = await readJSON(req);
+      const ids = (Array.isArray(payload.ids) ? payload.ids : [payload.id]).filter((v) => v !== undefined && v !== null);
+      const status = String(payload.status || "");
+      if (!ids.length || !status) return sendJSON(res, 400, { ok: false, error: "缺少 id 或 status" });
+      try {
+        const done = [];
+        for (const id of ids) {
+          await setCommentStatus(id, status);
+          done.push(id);
+        }
+        return sendJSON(res, 200, { ok: true, updated: done.length });
+      } catch (e) {
+        return sendJSON(res, 200, { ok: false, error: e.message, updated: 0 });
+      }
+    }
+
+    if (pathname === "/api/comments/delete" && req.method === "POST") {
+      const payload = await readJSON(req);
+      const ids = (Array.isArray(payload.ids) ? payload.ids : [payload.id]).filter((v) => v !== undefined && v !== null);
+      if (!ids.length) return sendJSON(res, 400, { ok: false, error: "缺少 id" });
+      try {
+        const done = [];
+        const failed = [];
+        for (const id of ids) {
+          try {
+            await deleteComment(id);
+            done.push(id);
+          } catch (e) {
+            failed.push({ id, error: e.message });
+          }
+        }
+        return sendJSON(res, 200, { ok: failed.length === 0, deleted: done.length, failed });
+      } catch (e) {
+        return sendJSON(res, 200, { ok: false, error: e.message, deleted: 0 });
+      }
     }
 
     // —— 文章管理

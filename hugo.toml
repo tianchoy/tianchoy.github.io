@@ -1,5 +1,5 @@
 baseURL = "https://tianchoy.github.io/"
-title = "特严赤傲"
+title = "特严赤傲-个人博客"
 theme = "liubai"
 locale = "zh-CN"
 defaultContentLanguage = "zh-cn"
@@ -35,7 +35,7 @@ summaryLength = 30
   # 给 CSS/JS 资源加内容哈希，避免 GitHub Pages CDN 缓存旧样式
   fingerprint = "sha256"
   dateFormat = "2006-01-02"
-  title = "特严赤傲"
+  title = "特严赤傲-个人博客"
   description = "小田的博客,这是一些关于生活随笔、心情日记、一些思想感悟的记录。"
   # 站点级关键词：首页/列表页用。文章页自动改用该文的 tags。
   # 2026-10-30 调整：按用户指定，聚焦「散文/随笔/个人博客/个人网站」定位。
@@ -56,7 +56,7 @@ summaryLength = 30
 
   [params.header]
     [params.header.title]
-      name = "特严赤傲"
+      name = "特严赤傲-个人博客"
 
   # 访问统计：provider 可选 none / goatcounter / umami / ga4 / cloudflare / busuanzi
   # 页脚数字由 layouts/partials/stats.html 按这里的分支注入；none 时不输出任何脚本

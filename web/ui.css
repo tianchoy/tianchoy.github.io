@@ -152,6 +152,14 @@ a:hover { text-decoration: underline; }
   content: ""; width: 6px; height: 6px; border-radius: 50%;
   background: var(--ok); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ok) 18%, transparent);
 }
+/* 服务已停止：圆点转灰，不再假装「运行中」 */
+.status-chip.is-off { color: var(--text-3); opacity: .75; }
+.status-chip.is-off::before {
+  background: var(--text-3);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-3) 16%, transparent);
+}
+/* 停止后正文变暗，明确这页已经不能操作了（顶栏保持原样，状态才看得清） */
+body.is-stopped main.page { opacity: .5; pointer-events: none; transition: opacity .25s ease; }
 
 /* ---------- 按钮 / 表单 ---------- */
 

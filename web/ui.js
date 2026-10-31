@@ -255,18 +255,57 @@
     });
   }
 
+  // 服务关掉后顶栏还挂着「本地服务运行中」会误导人，这里统一切成已停止的样子：
+  // 状态点变灰、文案改成「服务已关闭」，正文变暗提示页面已经不能操作了。
+  function markStopped(text) {
+    const chip = document.querySelector(".status-chip");
+    if (chip) {
+      chip.textContent = text;
+      chip.classList.add("is-off");
+    }
+    const btn = document.getElementById("btnShutdown");
+    if (btn) {
+      btn.textContent = "已关闭";
+      btn.disabled = true;
+    }
+    document.body.classList.add("is-stopped");
+  }
+
+  // 服务真的还在，还是只是那一次请求断了？探一下 /api/ping 就知道
+  async function stillAlive() {
+    try {
+      const res = await fetch("/api/ping", { cache: "no-store" });
+      return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
   function initTopbar() {
     markActiveNav();
     const btn = document.getElementById("btnShutdown");
     if (btn) {
       btn.addEventListener("click", async () => {
         if (!confirm("关闭本地写作台服务？\n关闭后需要重新双击「写作台.app」才能继续发布。")) return;
+        btn.disabled = true;
+        const old = btn.textContent;
+        btn.textContent = "关闭中…";
         try {
-          await fetch("/api/shutdown", { method: "POST" });
+          const res = await fetch("/api/shutdown", { method: "POST" });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          markStopped("服务已关闭");
           toast("服务已关闭，可以关掉这个页面了");
-          document.body.style.opacity = "0.55";
         } catch {
-          toast("关闭失败，请手动结束进程", "err");
+          // 服务是在回完响应之后才退的，连接断开时 fetch 可能直接抛错 ——
+          // 这时再用 /api/ping 探一次，探不通就说明确实已经关了。
+          if (await stillAlive()) {
+            btn.disabled = false;
+            btn.textContent = old;
+            toast("关闭失败，请手动结束进程", "err", 4200);
+            return;
+          }
+          markStopped("服务已关闭");
+          toast("服务已关闭，可以关掉这个页面了");
         }
       });
     }

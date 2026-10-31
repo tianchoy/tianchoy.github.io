@@ -894,6 +894,36 @@ body[theme="dark"] {
   }
 }
 
+// ==============================
+// 评论区（Waline）
+// 主题色对齐站点链接色；圆角与站点卡片一致。暗色由 Waline 自己根据
+// dark 选择器切换（它自带一套暗色变量），这里只补它没有覆盖的两项。
+// ==============================
+#waline {
+  --waline-theme-color: #{$single-link-color};
+  --waline-active-color: #{$single-link-hover-color};
+  --waline-font-size: .9rem;
+
+  .wl-panel,
+  .wl-header {
+    border-radius: .55rem;
+  }
+
+  .wl-btn {
+    border-radius: 999px;
+  }
+
+  // 评论 RSS 图标孤零零挂在左下角，与极简版式不搭，隐藏
+  .wl-rss {
+    display: none;
+  }
+}
+
+[theme=dark] #waline {
+  --waline-theme-color: #{$single-link-color-dark};
+  --waline-active-color: #{$single-link-hover-color-dark};
+}
+
 // 页脚：一行居中显示（统计 · 版权 · 作者 · 许可 · ICP）
 // 原来每块 .footer-line 各占整行、竖向堆叠；现在容器改 flex 行、子项不换行，
 // 窄屏放不下时自动折行。Hugo / KeepIt 主题版权块已在 footer.html 中移除。

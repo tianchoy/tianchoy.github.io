@@ -756,6 +756,11 @@ class Theme {
 
       if (this.config.comment.valine) new Valine(this.config.comment.valine);
 
+      // Waline：dark 传的是选择器，主题切换由 Waline 自己监听，无需在这里同步
+      if (this.config.comment.waline && typeof Waline !== 'undefined') {
+        this._walineInstance = Waline.init(this.config.comment.waline);
+      }
+
       if (this.config.comment.utterances) {
         const utterancesConfig = this.config.comment.utterances;
         const script = document.createElement('script');

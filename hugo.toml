@@ -54,6 +54,32 @@ summaryLength = 30
     highlightTag = "em"
     absoluteURL = false
 
+  # 评论系统：Waline（自建服务端，读者免登录，昵称+邮箱即可评论）
+  # 注意：主题 init.html 取的是 `params.page.comment`（不是 params.comment），
+  #      所以配置必须放在 [params.page.comment] 下，否则不会生效。
+  # 部署见 https://waline.js.org/guide/deploy/vercel.html ：
+  #   1) Vercel 一键部署 Waline → Storage 里创建 Neon 数据库 → 在 Neon SQL Editor 执行 waline.pgsql → Redeploy
+  #   2) 拿到服务端地址后填到 serverURL，并把下面两处 enable 改为 true
+  #   3) 访问 <serverURL>/ui/register 注册管理员（第一个注册的即管理员）
+  # 前端脚本已本地化（themes/liubai/assets/lib/waline/），不依赖第三方 CDN。
+  # 单篇文章可在 frontmatter 写 comment: false 单独关闭评论。
+  [params.page.comment]
+    enable = true
+    [params.page.comment.waline]
+      enable = true
+      # 部署完 Vercel 后把服务端地址填到这里（带 https://，结尾不要斜杠）。
+      # 留空时模板不会渲染评论区，填上即生效。
+      serverURL = ""
+      lang = "zh-CN"
+      # 关闭第三方登录按钮，读者只填昵称 + 邮箱
+      login = "disable"
+      requiredMeta = ["nick", "mail"]
+      pageSize = 10
+      commentSorting = "latest"
+      # 默认表情图走 unpkg（国内偏慢、且旧版本已 404），先关掉；
+      # 想开启可填可用地址，例如 "https://cdn.jsdelivr.net/npm/@waline/emojis@1.1.0/weibo"
+      emoji = false
+
   [params.header]
     [params.header.title]
       name = "特严赤傲-个人博客"

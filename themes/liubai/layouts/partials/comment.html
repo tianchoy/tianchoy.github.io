@@ -3,7 +3,23 @@
 {{- $comment := .Scratch.Get "comment" | default dict -}}
 {{- $commentConfig := dict -}}
 
-{{- if $comment.enable -}}
+{{- /*
+  只有当某个评论系统「真的可用」时才渲染 #comments 容器。
+  否则 Hugo 会输出一个空的 #comments，页面右下角的「查看评论」悬浮按钮
+  会指向空白区域。Waline 额外要求 serverURL 非空才算就绪。
+*/ -}}
+{{- $hasReady := false -}}
+{{- range $key, $system := $comment -}}
+    {{- if and (ne $key "enable") (ne $key "waline") (reflect.IsMap $system) $system.enable -}}
+        {{- $hasReady = true -}}
+    {{- end -}}
+{{- end -}}
+{{- $waline := $comment.waline | default dict -}}
+{{- if and $waline.enable $waline.serverURL -}}
+    {{- $hasReady = true -}}
+{{- end -}}
+
+{{- if and $comment.enable $hasReady -}}
     <div id="comments">
         {{- /* Disqus Comment System */ -}}
         {{- $disqus := $comment.disqus | default dict -}}
@@ -108,6 +124,37 @@
             {{- dict "Source" "https://cdn.commento.io/js/commento.js" "Defer" true | dict "Scratch" .Scratch "Data" | partial "scratch/script.html" -}}
             <noscript>
                 Please enable JavaScript to view the comments powered by <a href="https://commento.io/">Commento</a>.
+            </noscript>
+        {{- end -}}
+
+        {{- /* Waline Comment System */ -}}
+        {{- $waline := $comment.waline | default dict -}}
+        {{- if and $waline.enable $waline.serverURL -}}
+            <div id="waline" class="comment"></div>
+            {{- dict "Source" "lib/waline/waline.css" "Minify" true "Fingerprint" $fingerprint | dict "Scratch" .Scratch "Data" | partial "scratch/style.html" -}}
+            {{- dict "Source" "lib/waline/waline.umd.js" "Fingerprint" $fingerprint | dict "Scratch" .Scratch "Data" | partial "scratch/script.html" -}}
+            {{- /* emoji 默认开，但默认表情图走 unpkg（国内慢、当前版本已 404）。
+                   本站在 hugo.toml 里显式配了 emoji = false，需要时改成可用 CDN 地址即可 */ -}}
+            {{- $emoji := true -}}
+            {{- if isset $waline "emoji" -}}{{- $emoji = $waline.emoji -}}{{- end -}}
+            {{- /* dark 传 CSS 选择器：该选择器命中 waline 祖先节点时自动切暗色，
+                   本站主题切换写在 body[theme=dark] 上，正好可以由 Waline 自己监听 */ -}}
+            {{- $walineConfig := dict
+                "el" "#waline"
+                "serverURL" $waline.serverURL
+                "lang" ($waline.lang | default "zh-CN")
+                "dark" "body[theme=\"dark\"]"
+                "login" ($waline.login | default "disable")
+                "requiredMeta" ($waline.requiredMeta | default (slice "nick" "mail"))
+                "pageSize" ($waline.pageSize | default 10)
+                "commentSorting" ($waline.commentSorting | default "latest")
+                "emoji" $emoji
+                "search" false
+                "imageUploader" false
+            -}}
+            {{- $commentConfig = dict "waline" $walineConfig | merge $commentConfig -}}
+            <noscript>
+                Please enable JavaScript to view the comments powered by <a href="https://waline.js.org/">Waline</a>.
             </noscript>
         {{- end -}}
 

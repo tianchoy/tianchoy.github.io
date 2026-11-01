@@ -415,9 +415,11 @@
     function syncLabel() {
       const cur = select.options[select.selectedIndex];
       const ic = cur && cur.dataset.icon;
+      const sv = cur && cur.dataset.svg;
       const col = cur && cur.dataset.color;
       valueEl.innerHTML =
-        (ic ? `<i class="${ic}"${col ? ` style="color:${col}"` : ""}></i> ` : "") +
+        (sv ? `<span class="si"${col ? ` style="color:${col}"` : ""}>${sv}</span> ` :
+          ic ? `<i class="${ic}"${col ? ` style="color:${col}"` : ""}></i> ` : "") +
         esc(labelOf(cur) || "请选择…");
       wrap.classList.toggle("is-empty", !select.value);
       for (const el of listEl.children) {
@@ -453,9 +455,11 @@
         b.dataset.label = labelOf(o);
         b.disabled = o.disabled;
         const ic = o.dataset.icon;
+        const sv = o.dataset.svg;
         const col = o.dataset.color;
         b.innerHTML =
-          (ic ? `<i class="${ic}"${col ? ` style="color:${col}"` : ""}></i>` : "") +
+          (sv ? `<span class="si"${col ? ` style="color:${col}"` : ""}>${sv}</span>` :
+            ic ? `<i class="${ic}"${col ? ` style="color:${col}"` : ""}></i>` : "") +
           `<span class="cs-opt-label"></span>${SVG_CHECK}`;
         b.querySelector(".cs-opt-label").textContent = b.dataset.label || o.value;
         b.addEventListener("click", () => choose(b));

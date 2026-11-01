@@ -13,7 +13,7 @@ set -u
 # 写作台.app/Contents/MacOS/launcher → 上三级就是项目根目录
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 PORT="${PORT:-4321}"
-OPEN_PATH="${OPEN_PATH:-/publish}"
+OPEN_PATH="${OPEN_PATH:-/admin}"
 URL="http://127.0.0.1:${PORT}${OPEN_PATH}"
 LOG="$ROOT/.writing-desk.log"
 

@@ -222,7 +222,7 @@
 <script src="/ui/ui.js"></script>
 <script>
 (function () {
-  const { api, toast, esc, initTopbar } = window.WB;
+  const { api, toast, esc, initTopbar, confirmDialog, promptDialog } = window.WB;
   initTopbar();
 
   const $ = (id) => document.getElementById(id);
@@ -628,8 +628,8 @@
 
   $('btnSave').addEventListener('click', () => save(false));
   $('btnSaveDeploy').addEventListener('click', () => save(true));
-  $('btnReload').addEventListener('click', () => {
-    if (dirty && !confirm('放弃未保存的改动，重新读取？')) return;
+  $('btnReload').addEventListener('click', async () => {
+    if (dirty && !(await confirmDialog({ title: '重新读取', message: '放弃未保存的改动，重新读取？', danger: true }))) return;
     load();
   });
 

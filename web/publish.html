@@ -111,7 +111,7 @@ console.log('代码块')
 <script src="/ui/ui.js"></script>
 <script>
 (function () {
-  const { api, toast, renderMarkdown, countWords, esc, initTopbar } = window.WB;
+  const { api, toast, renderMarkdown, countWords, esc, initTopbar, confirmDialog, promptDialog } = window.WB;
   initTopbar();
 
   const $ = (id) => document.getElementById(id);
@@ -170,9 +170,9 @@ console.log('代码块')
     }
   }
 
-  catEl.addEventListener('change', () => {
+  catEl.addEventListener('change', async () => {
     if (catEl.value !== NEW_CAT) return;
-    const name = (prompt('新分类名称（会成为 content/posts 下的目录名）') || '').trim();
+    const name = (await promptDialog({ title: '新建文章分类', message: '新分类名称（会成为 content/posts 下的目录名）', placeholder: '例如 Vue3' }) || '').trim();
     if (!name) {
       catEl.selectedIndex = 0;
       return;
@@ -231,8 +231,8 @@ console.log('代码块')
     onInput();
   });
 
-  $('tb-link').addEventListener('click', () => {
-    const url = (prompt('链接地址', 'https://') || '').trim();
+  $('tb-link').addEventListener('click', async () => {
+    const url = (await promptDialog({ title: '插入链接', placeholder: 'https://', defaultValue: 'https://' }) || '').trim();
     if (!url) return;
     const { selectionStart: s, selectionEnd: e, value } = contentEl;
     const sel = value.slice(s, e);
@@ -248,8 +248,8 @@ console.log('代码块')
     onInput();
   });
 
-  $('tb-image').addEventListener('click', () => {
-    const url = prompt('图片地址（可先用图床拿到链接）', 'https://');
+  $('tb-image').addEventListener('click', async () => {
+    const url = await promptDialog({ title: '插入图片', message: '图片地址（可先用图床拿到链接）', placeholder: 'https://', defaultValue: 'https://' });
     if (!url) return;
     surround('![图片](' + url + ')', '');
   });
@@ -358,8 +358,8 @@ console.log('代码块')
     return true;
   }
 
-  discardBtn.addEventListener('click', () => {
-    if (!confirm('丢弃本机草稿？正文会被清空。')) return;
+  discardBtn.addEventListener('click', async () => {
+    if (!(await confirmDialog({ title: '清空草稿', message: '丢弃本机草稿？正文会被清空。', danger: true }))) return;
     localStorage.removeItem(DRAFT_KEY);
     currentFile = '';
     titleEl.value = '';
@@ -458,7 +458,7 @@ console.log('代码块')
 
     // 编辑已发布文章时，若选「保存草稿」会把它从线上撤下，先确认一下
     if (isDraft && editing && !isCurrentDraft) {
-      if (!confirm('这篇已是「已发布」状态，保存为草稿会让它从线上撤下。确定要转为草稿吗？')) return;
+      if (!(await confirmDialog({ title: '转为草稿', message: '这篇已是「已发布」状态，保存为草稿会让它从线上撤下。\n确定要转为草稿吗？', danger: true }))) return;
     }
 
     publishing = true;

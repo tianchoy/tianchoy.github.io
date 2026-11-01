@@ -94,7 +94,7 @@
 <script src="/ui/ui.js"></script>
 <script>
 (function () {
-  const { api, toast, esc, initTopbar } = window.WB;
+  const { api, toast, esc, initTopbar, confirmDialog, promptDialog } = window.WB;
   initTopbar();
 
   const $ = (id) => document.getElementById(id);
@@ -305,10 +305,11 @@
   }
 
   async function removeOne(post) {
-    const ok = confirm(
-      `删除《${post.title}》？\n\n文件：${post.file}\n\n文件会被直接移出仓库，操作不可撤销（可用 git 找回）。`
-    );
-    if (!ok) return;
+    if (!(await confirmDialog({
+      title: '删除文章',
+      message: `删除《${post.title}》？\n\n文件：${post.file}\n\n文件会被直接移出仓库，操作不可撤销（可用 git 找回）。`,
+      danger: true,
+    }))) return;
     await doDelete([post.file]);
   }
 
@@ -318,7 +319,11 @@
     const list = posts.filter((p) => files.includes(p.file));
     const names = list.slice(0, 5).map((p) => `· ${p.title}`).join('\n');
     const more = list.length > 5 ? `\n…等 ${list.length} 篇` : '';
-    if (!confirm(`删除选中的 ${files.length} 篇文章？\n\n${names}${more}\n\n操作不可撤销（可用 git 找回）。`)) return;
+    if (!(await confirmDialog({
+      title: '批量删除文章',
+      message: `删除选中的 ${files.length} 篇文章？\n\n${names}${more}\n\n操作不可撤销（可用 git 找回）。`,
+      danger: true,
+    }))) return;
     await doDelete(files);
   });
 
@@ -360,7 +365,7 @@
 
   $('btnDeploy').addEventListener('click', async () => {
     if (busy) return;
-    if (!confirm('把当前本地改动（含已删除的文章）推送到站点？')) return;
+    if (!(await confirmDialog({ title: '发布改动', message: '把当前本地改动（含已删除的文章）推送到站点？' }))) return;
     busy = true;
     $('btnDeploy').disabled = true;
     try {

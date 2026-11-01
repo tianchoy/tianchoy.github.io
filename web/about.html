@@ -90,7 +90,7 @@
 <script src="/ui/ui.js"></script>
 <script>
 (function () {
-  const { api, toast, renderMarkdown, countWords, esc, initTopbar } = window.WB;
+  const { api, toast, renderMarkdown, countWords, esc, initTopbar, confirmDialog, promptDialog } = window.WB;
   initTopbar();
 
   const $ = (id) => document.getElementById(id);
@@ -200,8 +200,8 @@
     });
   });
 
-  $('tb-link').addEventListener('click', () => {
-    const url = prompt('链接地址', 'https://');
+  $('tb-link').addEventListener('click', async () => {
+    const url = await promptDialog({ title: '插入链接', placeholder: 'https://', defaultValue: 'https://' });
     if (!url) return;
     const sel = contentEl.value.slice(contentEl.selectionStart, contentEl.selectionEnd) || '链接文字';
     const { selectionStart: s, selectionEnd: e } = contentEl;
@@ -210,8 +210,8 @@
     onInput();
   });
 
-  $('tb-image').addEventListener('click', () => {
-    const url = prompt('图片地址（可先用图床拿到链接）', 'https://');
+  $('tb-image').addEventListener('click', async () => {
+    const url = await promptDialog({ title: '插入图片', message: '图片地址（可先用图床拿到链接）', placeholder: 'https://', defaultValue: 'https://' });
     if (!url) return;
     surround('![](' + url + ')', '');
   });
@@ -290,8 +290,8 @@
 
   saveBtn.addEventListener('click', save);
 
-  revertBtn.addEventListener('click', () => {
-    if (!confirm('放弃改动，恢复到服务器上的版本？')) return;
+  revertBtn.addEventListener('click', async () => {
+    if (!(await confirmDialog({ title: '放弃改动', message: '放弃改动，恢复到服务器上的版本？', danger: true }))) return;
     applyServer({ title: server.title, body: server.body });
     toast('已恢复');
   });

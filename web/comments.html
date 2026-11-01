@@ -111,6 +111,7 @@
         <input type="text" id="q" placeholder="搜索昵称、邮箱或评论内容…" autocomplete="off">
       </div>
       <select id="status">
+        <option value="all" selected>全部</option>
         <option value="approved">已通过</option>
         <option value="waiting">待审核</option>
         <option value="spam">垃圾</option>
@@ -159,7 +160,7 @@
 <script src="/ui/ui.js"></script>
 <script>
 (function () {
-  const { api, toast, esc, initTopbar } = window.WB;
+  const { api, toast, esc, initTopbar, confirmDialog, promptDialog } = window.WB;
   initTopbar();
 
   const $ = (id) => document.getElementById(id);
@@ -204,7 +205,7 @@
 
   function render() {
     if (!items.length) {
-      rowsEl.innerHTML = `<tr><td colspan="6" class="num" style="text-align:center;padding:26px;">这个状态下还没有评论</td></tr>`;
+      rowsEl.innerHTML = `<tr><td colspan="6" class="num" style="text-align:center;padding:26px;">还没有评论</td></tr>`;
     } else {
       rowsEl.innerHTML = items
         .map((c) => {
@@ -271,7 +272,7 @@
       const id = btn.dataset.id;
       const act = btn.dataset.act;
       if (act === 'delete') {
-        if (!confirm('删除这条评论？操作不可撤销。')) return;
+        if (!(await confirmDialog({ title: '删除评论', message: '删除这条评论？\n操作不可撤销。', danger: true }))) return;
         await doDelete([id]);
       } else {
         await doUpdate([id], act);
@@ -309,7 +310,7 @@
   $('btnDeleteSel').addEventListener('click', async () => {
     const ids = [...picked];
     if (!ids.length) return;
-    if (!confirm(`删除选中的 ${ids.length} 条评论？操作不可撤销。`)) return;
+    if (!(await confirmDialog({ title: '批量删除评论', message: `删除选中的 ${ids.length} 条评论？\n操作不可撤销。`, danger: true }))) return;
     await doDelete(ids);
   });
 

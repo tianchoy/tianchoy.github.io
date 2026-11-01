@@ -24,6 +24,112 @@
     }, ms);
   }
 
+  /* ---------- 统一模态弹窗（替代原生 confirm / prompt） ---------- */
+
+  const SVG_ICON = {
+    danger:
+      '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 22 20H2L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="1.15" fill="currentColor"/></svg>',
+    info:
+      '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M12 11v5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="8" r="1.15" fill="currentColor"/></svg>',
+  };
+
+  // 返回 Promise：confirm 解析为 true(确定)/false(取消)，prompt 解析为 字符串(确定)/null(取消)
+  function openModal(opts) {
+    const {
+      title = "",
+      bodyHTML = "",
+      icon = "info",
+      danger = false,
+      input = false,
+      placeholder = "",
+      defaultValue = "",
+      confirmText = "确定",
+      cancelText = "取消",
+    } = opts;
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const mask = document.createElement("div");
+      mask.className = "wb-modal-mask";
+
+      const modal = document.createElement("div");
+      modal.className = "wb-modal";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.innerHTML =
+        `<div class="wb-modal-ico ${danger ? "ico-danger" : "ico-info"}">${SVG_ICON[icon] || SVG_ICON.info}</div>` +
+        '<div class="wb-modal-main">' +
+        `<h3 class="wb-modal-title">${esc(title)}</h3>` +
+        bodyHTML +
+        (input
+          ? `<div class="wb-modal-field"><input class="wb-modal-input" type="text" placeholder="${esc(placeholder)}" value="${esc(defaultValue)}" autocomplete="off" spellcheck="false"></div>`
+          : "") +
+        '<div class="wb-modal-actions">' +
+        `<button type="button" class="btn btn-ghost" data-act="cancel">${esc(cancelText)}</button>` +
+        `<button type="button" class="btn ${danger ? "btn-danger" : "btn-primary"}" data-act="ok">${esc(confirmText)}</button>` +
+        "</div></div>";
+      mask.appendChild(modal);
+      document.body.appendChild(mask);
+
+      const inputEl = modal.querySelector(".wb-modal-input");
+      const okBtn = modal.querySelector('[data-act="ok"]');
+      const cancelBtn = modal.querySelector('[data-act="cancel"]');
+
+      const finish = (val) => {
+        if (settled) return;
+        settled = true;
+        mask.classList.add("is-closing");
+        document.removeEventListener("keydown", onKey, true);
+        setTimeout(() => mask.remove(), 160);
+        resolve(val);
+      };
+
+      const onKey = (e) => {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          finish(input ? null : false);
+        } else if (e.key === "Enter" && !(e.target instanceof HTMLTextAreaElement)) {
+          e.preventDefault();
+          finish(input ? inputEl.value.trim() : true);
+        }
+      };
+
+      okBtn.addEventListener("click", () => finish(input ? inputEl.value.trim() : true));
+      cancelBtn.addEventListener("click", () => finish(input ? null : false));
+      mask.addEventListener("click", (e) => {
+        if (e.target === mask) finish(input ? null : false);
+      });
+      document.addEventListener("keydown", onKey, true);
+
+      requestAnimationFrame(() => (input ? inputEl : okBtn).focus());
+    });
+  }
+
+  function confirmDialog(opts = {}) {
+    const { title = "", message = "", danger = false, confirmText = "确定", cancelText = "取消" } = opts;
+    return openModal({
+      title,
+      bodyHTML: message ? `<div class="wb-modal-body">${esc(message)}</div>` : "",
+      icon: danger ? "danger" : "info",
+      danger,
+      confirmText,
+      cancelText,
+    }).then((v) => v === true);
+  }
+
+  function promptDialog(opts = {}) {
+    const { title = "", message = "", placeholder = "", defaultValue = "", confirmText = "确定", cancelText = "取消" } = opts;
+    return openModal({
+      title,
+      bodyHTML: message ? `<div class="wb-modal-body">${esc(message)}</div>` : "",
+      input: true,
+      placeholder,
+      defaultValue,
+      confirmText,
+      cancelText,
+    });
+  }
+
   async function api(url, options = {}) {
     let res;
     try {
@@ -286,7 +392,7 @@
     const btn = document.getElementById("btnShutdown");
     if (btn) {
       btn.addEventListener("click", async () => {
-        if (!confirm("关闭本地写作台服务？\n关闭后需要重新双击「写作台.app」才能继续发布。")) return;
+        if (!(await confirmDialog({ title: "关闭服务", message: "关闭本地写作台服务？\n关闭后需要重新双击「写作台.app」才能继续发布。", danger: true }))) return;
         btn.disabled = true;
         const old = btn.textContent;
         btn.textContent = "关闭中…";
@@ -609,7 +715,7 @@
     bindDismiss();
   }
 
-  window.WB = { api, toast, renderMarkdown, countWords, esc, initTopbar, enhanceAllSelects };
+  window.WB = { api, toast, renderMarkdown, countWords, esc, initTopbar, enhanceAllSelects, confirmDialog, promptDialog };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", enhanceAllSelects);
   else enhanceAllSelects();
 })();

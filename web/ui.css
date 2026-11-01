@@ -657,6 +657,56 @@ select { appearance: none; background-image: none; cursor: pointer; }
 .toast.draft { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 
+/* ---------- 统一模态弹窗（替代原生 confirm / prompt） ---------- */
+
+.wb-modal-mask {
+  position: fixed; inset: 0; z-index: 90;
+  display: flex; align-items: center; justify-content: center;
+  padding: 22px;
+  background: color-mix(in srgb, #101828 40%, transparent);
+  backdrop-filter: blur(3px);
+  animation: wb-mask-in 0.14s ease-out;
+}
+.wb-modal-mask.is-closing { animation: wb-mask-out 0.16s ease-in forwards; }
+
+.wb-modal {
+  width: 100%; max-width: 420px;
+  display: flex; gap: 14px; align-items: flex-start;
+  padding: 22px 22px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  animation: wb-modal-in 0.18s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+.wb-modal-mask.is-closing .wb-modal { animation: wb-modal-out 0.16s ease-in forwards; }
+
+.wb-modal-ico {
+  flex: 0 0 auto; width: 34px; height: 34px; margin-top: 1px;
+  border-radius: 50%; display: grid; place-items: center;
+}
+.wb-modal-ico svg { width: 18px; height: 18px; }
+.ico-danger { background: var(--err-weak); color: var(--err); }
+.ico-info { background: var(--accent-weak); color: var(--accent); }
+
+.wb-modal-main { flex: 1 1 auto; min-width: 0; }
+.wb-modal-title { margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+.wb-modal-body { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--text-2); white-space: pre-wrap; word-break: break-word; }
+.wb-modal-field { margin-top: 14px; }
+.wb-modal-input {
+  width: 100%; padding: 9px 12px; font-size: 14px; font-family: inherit;
+  color: var(--text); background: var(--surface-2);
+  border: 1px solid var(--border-strong); border-radius: var(--radius-sm);
+  outline: none; transition: border-color 0.15s, box-shadow 0.15s;
+}
+.wb-modal-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-weak); }
+.wb-modal-actions { margin-top: 18px; display: flex; gap: 10px; justify-content: flex-end; }
+
+@keyframes wb-mask-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wb-mask-out { to { opacity: 0; } }
+@keyframes wb-modal-in { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes wb-modal-out { to { opacity: 0; transform: translateY(6px) scale(0.98); } }
+
 /* ---------- 设置页 ---------- */
 
 .page { max-width: 980px; margin: 0 auto; padding: 24px 22px 56px; }

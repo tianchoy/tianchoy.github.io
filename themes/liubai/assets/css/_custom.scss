@@ -734,21 +734,46 @@ body[theme="dark"] {
     }
 
     // simple-icons 注入的 <svg>（豆瓣等）以及旧式 <img>：强制统一成正方形
+    // fill: currentColor 让注入的 svg 跟随 <a> 的品牌色（simple-icons 的 path 默认黑色）
     svg,
     img,
     .icon {
       width: 1.1rem;
       height: 1.1rem;
       display: block;
+      fill: currentColor;
     }
   }
 
+  // 暗色模式先给所有图标一个基础色，品牌色放在后面覆盖（同权重靠后生效）
   [theme=dark] & a {
     color: $global-font-secondary-color-dark;
 
     &:hover {
       background-color: rgba(255, 255, 255, .08);
     }
+  }
+
+  // ==============================
+  // 社交图标品牌色：按 href 前缀区分平台，无需改模板
+  // 取各平台官方品牌色；hover 仍统一走强调色，保证交互一致
+  // ==============================
+  a[href^="https://github.com/"] { color: #24292f; }
+  a[href^="https://www.douban.com/"] { color: #2e9b4c; }
+  a[href^="https://fanfou.com/"] { color: #009fe3; }
+  a[href^="mailto:"] { color: #e8503a; }
+
+  // hover 放在品牌色之后：同权重靠后覆盖，hover 时切到强调色
+  a:hover { color: $global-link-hover-color; }
+
+  // 暗色下品牌色提亮，否则 GitHub 深色、豆瓣绿在深背景上几乎看不见
+  [theme=dark] & {
+    a[href^="https://github.com/"] { color: #e6e6e6; }
+    a[href^="https://www.douban.com/"] { color: #4cc46e; }
+    a[href^="https://fanfou.com/"] { color: #38bdf8; }
+    a[href^="mailto:"] { color: #f26d5b; }
+
+    a:hover { color: $global-link-hover-color; }
   }
 }
 

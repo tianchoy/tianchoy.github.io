@@ -414,7 +414,11 @@
 
     function syncLabel() {
       const cur = select.options[select.selectedIndex];
-      valueEl.textContent = labelOf(cur) || "请选择…";
+      const ic = cur && cur.dataset.icon;
+      const col = cur && cur.dataset.color;
+      valueEl.innerHTML =
+        (ic ? `<i class="${ic}"${col ? ` style="color:${col}"` : ""}></i> ` : "") +
+        esc(labelOf(cur) || "请选择…");
       wrap.classList.toggle("is-empty", !select.value);
       for (const el of listEl.children) {
         // 空值不标选中：那是「请选择…」占位项，勾上会让人以为已经选好了
@@ -448,8 +452,12 @@
         b.dataset.value = o.value;
         b.dataset.label = labelOf(o);
         b.disabled = o.disabled;
-        b.innerHTML = `<span class="cs-opt-label"></span>${SVG_CHECK}`;
-        b.firstChild.textContent = b.dataset.label || o.value;
+        const ic = o.dataset.icon;
+        const col = o.dataset.color;
+        b.innerHTML =
+          (ic ? `<i class="${ic}"${col ? ` style="color:${col}"` : ""}></i>` : "") +
+          `<span class="cs-opt-label"></span>${SVG_CHECK}`;
+        b.querySelector(".cs-opt-label").textContent = b.dataset.label || o.value;
         b.addEventListener("click", () => choose(b));
         listEl.appendChild(b);
       }

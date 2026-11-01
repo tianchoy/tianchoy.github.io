@@ -264,7 +264,8 @@
       .filter((s) => String(s.value || '').trim())
       .map((s) => {
         const c = catalog.find((x) => x.key.toLowerCase() === String(s.key).toLowerCase());
-        return `<i class="${esc(c && c.icon ? c.icon : 'fas fa-link fa-fw')}" title="${esc(c ? c.label : s.key)}"></i>`;
+        const col = c && c.color ? c.color : '';
+        return `<i class="${esc(c && c.icon ? c.icon : 'fas fa-link fa-fw')}"${col ? ` style="color:${esc(col)}"` : ''} title="${esc(c ? c.label : s.key)}"></i>`;
       });
     $('ppSocial').innerHTML = icons.join('');
   }
@@ -344,7 +345,7 @@
       const row = document.createElement('div');
       row.className = 'social-item';
       row.innerHTML =
-        `<div class="social-name">${c && c.icon ? `<i class="${esc(c.icon)}"></i>` : ''}<span>${esc(c ? c.label : item.key)}</span></div>
+        `<div class="social-name">${c ? `<i class="${esc(c.icon || 'fas fa-link fa-fw')}"${c.color ? ` style="color:${esc(c.color)}"` : ''}></i>` : ''}<span>${esc(c ? c.label : item.key)}</span></div>
          <div>
            <input type="text" value="${esc(item.value)}" data-index="${index}" placeholder="账号名或完整链接" autocomplete="off">
            <div class="url-hint" data-url="${index}"></div>
@@ -388,6 +389,9 @@
       const o = document.createElement('option');
       o.value = c.key;
       o.textContent = c.label;
+      // simple-icons 类平台（豆瓣/知乎等）在写作台没有 SVG 注入机制，用统一彩色链接图标兜底
+      o.dataset.icon = c.icon || 'fas fa-link fa-fw';
+      if (c.color) o.dataset.color = c.color;
       newKeyEl.appendChild(o);
     }
     newKeyEl.title = `共 ${catalog.length} 个平台，已用 ${used.size} 个`;

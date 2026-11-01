@@ -422,6 +422,26 @@ select { appearance: none; background-image: none; cursor: pointer; }
   text-align: center;
 }
 
+/* 下拉/社交图标：统一尺寸与对齐（颜色由各平台 inline style 决定） */
+.cs-opt > i {
+  flex: none;
+  width: 1.1em;
+  text-align: center;
+  font-size: 0.95em;
+}
+.social-name > i {
+  width: 1.05em;
+  text-align: center;
+  margin-right: 3px;
+  font-size: 0.95em;
+}
+.pp-social > i {
+  width: 1.05em;
+  text-align: center;
+  margin: 0 2px;
+  font-size: 1em;
+}
+
 /* 筛选条里的下拉按内容宽度收缩，和原来的 select 一致 */
 .filter-bar .cs { width: auto; flex: none; min-width: 122px; }
 

@@ -950,6 +950,21 @@ body[theme="dark"] {
   .wl-rss {
     display: none;
   }
+
+  // 底部 "Powered by Waline" 署名行：已由初始化 noCopyright:true 不渲染，
+  // 这里再用 CSS 兜底，确保万无一失
+  .wl-power {
+    display: none !important;
+  }
+
+  // 编辑器左下角工具栏（.wl-actions）：当前只有「Markdown 指南」外链（M 图标）
+  // 与「预览」切换两个按钮——emoji/GIF/图片上传都已在配置里关闭。
+  // 前者是无意义英文外链、后者非必需，按极简偏好一并隐藏；
+  // 字数统计与「提交」按钮是该容器的兄弟节点，不受影响。
+  // 若日后启用 emoji 等，需在此取消隐藏或将对应按钮单独放行。
+  .wl-actions {
+    display: none !important;
+  }
 }
 
 [theme=dark] #waline {

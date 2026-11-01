@@ -34,6 +34,12 @@
   };
 
   // 返回 Promise：confirm 解析为 true(确定)/false(取消)，prompt 解析为 字符串(确定)/null(取消)
+  //
+  // 同时只允许一层弹窗「活着」响应键盘：两个框叠在一起时，Enter 会同时命中两份
+  // keydown 处理器，等于一次回车点了两个确认（例如「放弃改动」和「关闭服务」）。
+  // 这里用深度号判断，只有最上面那层才处理键盘和点遮罩。
+  let modalDepth = 0;
+
   function openModal(opts) {
     const {
       title = "",
@@ -49,6 +55,8 @@
 
     return new Promise((resolve) => {
       let settled = false;
+      const myDepth = ++modalDepth;
+      const isTop = () => myDepth === modalDepth;
       const mask = document.createElement("div");
       mask.className = "wb-modal-mask";
 
@@ -78,6 +86,7 @@
       const finish = (val) => {
         if (settled) return;
         settled = true;
+        if (myDepth === modalDepth) modalDepth = Math.max(0, modalDepth - 1);
         mask.classList.add("is-closing");
         document.removeEventListener("keydown", onKey, true);
         setTimeout(() => mask.remove(), 160);
@@ -85,6 +94,7 @@
       };
 
       const onKey = (e) => {
+        if (!isTop()) return;
         if (e.key === "Escape") {
           e.preventDefault();
           finish(input ? null : false);

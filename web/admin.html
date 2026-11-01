@@ -202,6 +202,7 @@
           <span class="spacer"></span>
           <a class="btn btn-ghost btn-sm" id="btnNfOpen" href="https://app.netlify.com/" target="_blank" rel="noopener">部署记录 ↗</a>
           <button class="btn btn-ghost btn-sm" id="btnNfState">查看状态</button>
+          <button class="btn btn-ghost btn-sm" id="btnNfClear">清除配置</button>
           <button class="btn btn-ghost btn-sm" id="btnNfSave">保存配置</button>
           <button class="btn btn-primary btn-sm" id="btnNfDeploy">立即部署</button>
         </div>
@@ -727,6 +728,33 @@
       await nfLoad();
     } catch (e) {
       toast('保存失败：' + e.message, 'err', 4200);
+    }
+  });
+
+  $('btnNfClear').addEventListener('click', async () => {
+    const ok = await confirmDialog({
+      title: '清除 Netlify 配置',
+      message: '清除本机保存的 Build Hook 与 Personal Access Token？\n清除后「立即部署 / 查看状态」都不能用，需要重新填写。',
+      danger: true,
+      confirmText: '清除',
+    });
+    if (!ok) return;
+    try {
+      await api('/api/netlify/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reset: true }),
+      });
+      nfHook.value = '';
+      nfToken.value = '';
+      nfHook.placeholder = 'https://api.netlify.com/build_hooks/…';
+      nfToken.placeholder = '留空则只触发、不查状态';
+      nfState.innerHTML = '';
+      btnNfDeploy.disabled = true;
+      await nfLoad();
+      toast('已清除本机配置');
+    } catch (e) {
+      toast('清除失败：' + e.message, 'err', 4200);
     }
   });
 

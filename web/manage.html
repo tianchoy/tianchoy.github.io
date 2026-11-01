@@ -338,20 +338,31 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files, deploy: $('autoDeploy').checked }),
       });
+      // 写文章页的本机草稿若还指着被删的文件，留着会在下次打开时把文章「复活」
+      try {
+        const raw = localStorage.getItem('wb.draft.v1');
+        const draft = raw ? JSON.parse(raw) : null;
+        if (draft && draft.file && files.includes(draft.file)) localStorage.removeItem('wb.draft.v1');
+      } catch {
+        /* 本机存储不可用就算了，不影响删除 */
+      }
       picked.clear();
       await load();
       const deploy = data.deploy || {};
-      renderResult(
-        'ok',
-        `✅ 已删除 ${data.deleted.length} 篇`,
-        [deploy.skipped ? '只删了本地文件，站点还没更新——点右下角「发布当前改动」即可上线。' : '已推送仓库，GitHub Actions 构建中（约 30～60 秒）'],
-        deploy
-      );
+      const lines = [
+        deploy.skipped
+          ? '只删了本地文件，站点还没更新——点右下角「发布当前改动」即可上线。'
+          : '已推送仓库，GitHub Actions 构建中（约 30～60 秒）',
+      ];
+      if (data.missing && data.missing.length) {
+        lines.push(`以下文件本来就不在，已跳过：${data.missing.join('、')}`);
+      }
+      renderResult('ok', `✅ 已删除 ${data.deleted.length} 篇`, lines, deploy);
       toast(`已删除 ${data.deleted.length} 篇`);
     } catch (e) {
       await load();
       const d = e.payload || {};
-      if (d.deleted) {
+      if (d.deleted && d.deleted.length) {
         renderResult('err', '⚠️ 文件已删除，但发布失败', [d.error || e.message], d.deploy);
       } else {
         renderResult('err', '❌ 删除失败', [e.message]);

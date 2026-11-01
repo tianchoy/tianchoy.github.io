@@ -48,8 +48,10 @@
       <button class="tool-btn" data-wrap="- " data-line="1" title="列表">≡</button>
       <span class="tool-sep"></span>
       <button class="tool-btn" id="tb-link" title="插入链接">链接</button>
-      <button class="tool-btn" id="tb-image" title="插入图片">图片</button>
+      <button class="tool-btn" id="tb-image" title="插入图片链接">图片链接</button>
+      <button class="tool-btn" id="tb-upload" title="上传本地图片到 static/images/uploads/">上传图片</button>
     </div>
+    <input type="file" id="imgFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
 
     <div class="editor-body">
       <textarea id="content" placeholder="关于页正文，支持 Markdown…
@@ -117,8 +119,9 @@
     }
     previewEl.innerHTML =
       `<div class="about-preview-head">` +
-      `<img src="${esc(server.avatar)}" alt="${esc(server.title)}">` +
-      `<h1 class="article-title">${esc(server.title || title || '关于')}</h1>` +
+      `<img src="${esc(server.avatar)}" alt="${esc(title || server.title)}">` +
+      // 标题取输入框的实时值：编辑时预览不跟着变，改完才发现没生效最坑
+      `<h1 class="article-title">${esc(title || server.title || '关于')}</h1>` +
       `</div>` +
       `<div class="article-body">${renderMarkdown(body) || '<p class="preview-empty">（正文为空）</p>'}</div>`;
   }
@@ -216,6 +219,30 @@
     surround('![](' + url + ')', '');
   });
 
+  $('tb-upload').addEventListener('click', () => {
+    $('imgFile').value = '';
+    $('imgFile').click();
+  });
+
+  $('imgFile').addEventListener('change', async () => {
+    const f = $('imgFile').files && $('imgFile').files[0];
+    if (!f) return;
+    if (f.size > 12 * 1024 * 1024) {
+      toast('图片超过 12MB，请先压缩', 'err');
+      return;
+    }
+    toast('上传中…', '', 1500);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': f.type }, body: f });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      surround(`![](${data.url})`, '');
+      toast('图片已插入正文，保存时会一起提交');
+    } catch (e) {
+      toast('上传失败：' + e.message, 'err', 4600);
+    }
+  });
+
   contentEl.addEventListener('keydown', (e) => {
     if (e.key === 'Tab' && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
@@ -234,11 +261,12 @@
       ? `<details><summary class="hint" style="cursor:pointer;margin-top:8px;">部署日志（${deploy.ms || 0} ms）</summary><pre>${esc(deploy.output)}</pre></details>`
       : '';
     if (ok) {
+      const url = payload.permalink || 'https://tianchoy.github.io/about/';
       resultEl.innerHTML =
         `<div class="result ok">
           <div class="result-head">✅ 已保存</div>
           <div class="result-line">文件：${esc((payload.about && payload.about.file) || 'content/about.md')}</div>
-          <div class="result-line">线上：<a href="https://tianchoy.github.io/about/" target="_blank" rel="noopener">https://tianchoy.github.io/about/</a></div>
+          <div class="result-line">线上：<a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a></div>
           <div class="result-line">${deploy.skipped ? '（仅写入本地文件，未推送）' : 'GitHub Actions 已触发，通常 30～60 秒后生效'}</div>
           ${log}
         </div>`;

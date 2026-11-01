@@ -20,9 +20,10 @@ import {
   readSiteSettings,
   saveSiteSettings,
   saveAvatarFile,
+  saveUploadedImage,
   avatarExtFor,
 } from "./lib/site-config.mjs";
-import { listPosts, deletePosts, readPost, savePost, postPermalink } from "./lib/posts.mjs";
+import { listPosts, deletePosts, readPost, savePost, postPermalink, siteBaseURL } from "./lib/posts.mjs";
 import { readAboutPage, saveAboutPage } from "./lib/about.mjs";
 import { suggestTags } from "./lib/auto-tags.mjs";
 import {
@@ -70,6 +71,8 @@ const MIME = {
   ".woff2": "font/woff2",
   ".woff": "font/woff",
   ".ttf": "font/ttf",
+  ".webmanifest": "application/manifest+json; charset=utf-8",
+  ".map": "application/json; charset=utf-8",
   ".xml": "application/xml; charset=utf-8",
   ".txt": "text/plain; charset=utf-8",
   ".md": "text/markdown; charset=utf-8",
@@ -538,7 +541,8 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         about,
-        permalink: "/about/",
+        // 前端要拿它做「线上地址」链接，必须是绝对地址，别在页面里写死域名
+        permalink: `${siteBaseURL()}/about/`,
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
         deploy,
       });
@@ -552,6 +556,18 @@ const server = http.createServer(async (req, res) => {
       const buf = await readBody(req, 13 * 1024 * 1024);
       const { avatarURL, file } = await saveAvatarFile(buf, type);
       return sendJSON(res, 200, { ok: true, avatarURL, file });
+    }
+
+    // 文章配图上传：写进 static/images/uploads/，返回可直接插进正文的站内路径。
+    // 不部署——配图单独推上去没有意义，等文章发布时由 deploy.sh 的 git add -A 一起带上。
+    if (pathname === "/api/upload" && req.method === "POST") {
+      const type = req.headers["content-type"] || "";
+      if (!avatarExtFor(type)) {
+        return sendJSON(res, 400, { ok: false, error: "只支持 JPG / PNG / WebP / GIF" });
+      }
+      const buf = await readBody(req, 13 * 1024 * 1024);
+      const saved = await saveUploadedImage(buf, type);
+      return sendJSON(res, 200, { ok: true, ...saved });
     }
 
     // 发布前给标签框补位：不足 5 个时按标题/正文/分类算出建议
@@ -609,6 +625,7 @@ const server = http.createServer(async (req, res) => {
       const base = {
         ok: true,
         serverURL,
+        siteURL: siteBaseURL(),
         hasAuth: !!(auth.email && auth.password),
         email: auth.email,
       };
@@ -774,13 +791,18 @@ const server = http.createServer(async (req, res) => {
         tags: cleanTags(payload.tags),
         draft: typeof payload.draft === "boolean" ? payload.draft : undefined,
       });
-      // 草稿只写本地文件、不推送；正式发布才部署
-      const deploy = await deployOrSkip(payload.draft === true);
+      // 草稿只在本地落盘、不推送（公开仓库不该出现没写完的稿子）。
+      // 但「已发布 → 草稿」这种状态翻转必须推上线：draft:true 只改本地文件的话，
+      // 线上那篇还在，界面上写着「已转为草稿」其实是假的。
+      const draftNow = typeof payload.draft === "boolean" ? payload.draft : saved.draftBefore;
+      const flipped = typeof payload.draft === "boolean" && payload.draft !== saved.draftBefore;
+      const deploy = await deployOrSkip(draftNow && !flipped);
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         saved: true,
         file: saved.file,
         permalink: saved.permalink,
+        draftBefore: saved.draftBefore,
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
         deploy,
       });
@@ -788,11 +810,12 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === "/api/posts/delete" && req.method === "POST") {
       const payload = await readJSON(req);
-      const deleted = await deletePosts(payload.files);
+      const { deleted, missing } = await deletePosts(payload.files);
       const deploy = await deployOrSkip(!shouldDeploy(payload));
       return sendJSON(res, deploy.ok ? 200 : 500, {
         ok: deploy.ok,
         deleted,
+        missing,
         error: deploy.ok ? undefined : `已删除 ${deleted.length} 篇，但部署失败（退出码 ${deploy.code}）`,
         deploy,
       });

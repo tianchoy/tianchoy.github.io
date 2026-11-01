@@ -181,6 +181,7 @@
   let picked = new Set();
   let busy = false;
   let serverURL = '';
+  let siteURL = '';
   let page = 1;
   let totalPages = 1;
   let counts = { spam: 0, waiting: 0 };
@@ -211,7 +212,7 @@
         .map((c) => {
           const pickedCls = picked.has(c.objectId) ? 'is-picked' : '';
           const where = c.url
-            ? `<a class="cmt-where" href="${esc('https://tianchoy.github.io' + c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a>`
+            ? `<a class="cmt-where" href="${esc((siteURL || 'https://tianchoy.github.io') + c.url)}" target="_blank" rel="noopener">${esc(c.url)}</a>`
             : '<span class="num">—</span>';
           const badge = c.status && c.status !== 'approved'
             ? ` <span class="badge-status ${esc(c.status)}">${esc(statusLabel[c.status] || c.status)}</span>`
@@ -429,6 +430,7 @@
     try {
       const data = await api('/api/comments?' + params.toString());
       serverURL = data.serverURL || '';
+      siteURL = data.siteURL || siteURL;
       $('btnOpenAdmin').hidden = !serverURL;
 
       if (!data.serverURL) {

@@ -64,9 +64,11 @@
       <button class="tool-btn" data-wrap="- " data-line="1" title="列表">≡</button>
       <span class="tool-sep"></span>
       <button class="tool-btn" id="tb-link" title="插入链接">链接</button>
-      <button class="tool-btn" id="tb-image" title="插入图片">图片</button>
+      <button class="tool-btn" id="tb-image" title="插入图片链接">图片链接</button>
+      <button class="tool-btn" id="tb-upload" title="上传本地图片到 static/images/uploads/">上传图片</button>
       <button class="tool-btn" id="tb-table" title="插入表格">表格</button>
     </div>
+    <input type="file" id="imgFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
 
     <div class="editor-body">
       <textarea id="content" placeholder="在这里写正文，支持 Markdown。
@@ -88,6 +90,7 @@ console.log('代码块')
       <button class="btn btn-ghost btn-sm" id="btnDiscard" hidden>丢弃草稿</button>
       <span class="spacer"></span>
       <span class="hint" id="kbdHint" title="⌘/Ctrl + Enter 发布，⌘/Ctrl + S 保存草稿">⌘↵ 发布 · ⌘S 存草稿</span>
+      <button class="btn btn-danger btn-sm" id="btnDelete" hidden>删除这篇文章</button>
       <button class="btn btn-ghost" id="btnSaveDraft">保存草稿</button>
       <button class="btn btn-primary" id="btnPublish">发布</button>
     </div>
@@ -252,6 +255,32 @@ console.log('代码块')
     const url = await promptDialog({ title: '插入图片', message: '图片地址（可先用图床拿到链接）', placeholder: 'https://', defaultValue: 'https://' });
     if (!url) return;
     surround('![图片](' + url + ')', '');
+  });
+
+  // 本地上传：图片落到 static/images/uploads/，正文里只留站内路径。
+  // 比贴图床外链可靠——不会因为图床跑路或防盗链变成一排破图。
+  $('tb-upload').addEventListener('click', () => {
+    $('imgFile').value = '';
+    $('imgFile').click();
+  });
+
+  $('imgFile').addEventListener('change', async () => {
+    const f = $('imgFile').files && $('imgFile').files[0];
+    if (!f) return;
+    if (f.size > 12 * 1024 * 1024) {
+      toast('图片超过 12MB，请先压缩', 'err');
+      return;
+    }
+    toast('上传中…', '', 1500);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', headers: { 'Content-Type': f.type }, body: f });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      surround(`![](${data.url})`, '');
+      toast('图片已插入正文，发布时会一起提交');
+    } catch (e) {
+      toast('上传失败：' + e.message, 'err', 4600);
+    }
   });
 
   $('tb-table').addEventListener('click', () => {
@@ -545,6 +574,54 @@ console.log('代码块')
 
   publishBtn.addEventListener('click', () => submit('publish'));
   saveDraftBtn.addEventListener('click', () => submit('draft'));
+
+  /* ---------- 删除（仅在编辑已有文章时出现） ---------- */
+
+  const deleteBtn = $('btnDelete');
+  if (editing) deleteBtn.hidden = false;
+
+  deleteBtn.addEventListener('click', async () => {
+    if (publishing) return;
+    const ok = await confirmDialog({
+      title: '彻底删除这篇文章',
+      message:
+        `《${titleEl.value.trim() || EDIT_FILE}》\n\n` +
+        `文件：${EDIT_FILE}\n\n` +
+        '文件会从仓库移除，并立即推送上线（线上那一页也随之消失）。\n' +
+        '操作不可撤销，要找回只能翻 git 历史。',
+      danger: true,
+      confirmText: '删除并发布',
+    });
+    if (!ok) return;
+
+    const original = deleteBtn.textContent;
+    deleteBtn.disabled = true;
+    deleteBtn.textContent = '删除中…';
+    try {
+      const data = await api('/api/posts/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: [EDIT_FILE], deploy: true }),
+      });
+      // 本机草稿若还指着这篇，一并清掉；否则下次进写文章页会把它「复活」再发出去
+      const d = readDraft();
+      if (d && d.file === EDIT_FILE) localStorage.removeItem(DRAFT_KEY);
+      const secs = data.deploy && data.deploy.ms ? Math.round(data.deploy.ms / 1000) : 0;
+      toast(`已删除并推送${secs ? ` · ${secs}s` : ''}，Actions 构建后线上即消失`, 'ok', 3600);
+      location.href = '/manage';
+    } catch (e) {
+      const p = e.payload || {};
+      if (p.deleted && p.deleted.length) {
+        // 文件已经删掉了，只是没推上去——别让人留在编辑页对着一个不存在的文件
+        toast('文件已删除，但发布失败：' + e.message, 'err', 6000);
+        setTimeout(() => (location.href = '/manage'), 1500);
+        return;
+      }
+      deleteBtn.disabled = false;
+      deleteBtn.textContent = original;
+      toast('删除失败：' + e.message, 'err', 5200);
+    }
+  });
 
   document.addEventListener('keydown', (e) => {
     const mod = e.metaKey || e.ctrlKey;

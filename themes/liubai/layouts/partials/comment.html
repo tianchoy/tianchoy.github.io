@@ -151,8 +151,6 @@
                 "emoji" $emoji
                 "search" false
                 "imageUploader" false
-                // Waline 该版本认 noCopyright（默认 false 才显示底部 "Powered by"）
-                // 之前误填的 copyright 字段此版本无作用，这里改用正确字段彻底隐藏
                 "noCopyright" true
             -}}
             {{- $commentConfig = dict "waline" $walineConfig | merge $commentConfig -}}

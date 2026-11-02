@@ -502,6 +502,11 @@ console.log('代码块')
     try {
       // 标签不足 5 个时先补齐，用户能在标签框里看到补上了什么
       const tags = await fillTags(title, category, content);
+      // 体验项：服务端 cleanTags 最多只留 8 个标签，超出的会被静默丢掉；
+      // 这里先提示，避免用户以为 12 个标签都存进去了
+      if (tags.length > 8) {
+        toast(`标签超过 8 个，超出部分不会保存（最多保留前 8 个）`, 'draft', 3400);
+      }
       const body = { category, title, content, tags, draft: isDraft };
       let data;
       if (editing) {
@@ -549,6 +554,9 @@ console.log('代码块')
           localStorage.removeItem(DRAFT_KEY);
           discardBtn.hidden = true;
           saveStateEl.textContent = '已发布，草稿已清空';
+          // A1：发布成功（非编辑模式）后清空本机文件指针。否则「清空写 B」时 currentFile 仍指着
+          // 刚发出的那篇，下一次发布会用同一路径去 /api/post 覆盖 A，而不是新建 B。
+          currentFile = '';
         }
       } else {
         saveStateEl.textContent = isDraft ? '已保存为草稿（未发布）' : '已保存并发布';
@@ -624,6 +632,10 @@ console.log('代码块')
   });
 
   document.addEventListener('keydown', (e) => {
+    // 体验项：弹窗（确认/输入对话框）打开时，⌘S / ⌘↵ 不该穿透到写文章页触发保存或发布，
+    // 否则在「删除文章」之类的确认框里按 ⌘↵ 会一边关弹窗一边发发布请求。弹窗自身的
+    // modalDepth 键盘处理才是该接管这些按键的一方。
+    if (document.querySelector('.wb-modal-mask')) return;
     const mod = e.metaKey || e.ctrlKey;
     if (mod && e.key === 'Enter') {
       e.preventDefault();

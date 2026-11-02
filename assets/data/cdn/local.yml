@@ -1,0 +1,44 @@
+# 本地资源清单：把主题各 xxxJS/CSS 都指向 vendored 在 assets/lib/ 下的本地副本，
+# 不再拼接 jsdelivr 的 CDN 前缀（init.html 读 prefix.libFiles，这里置空），
+# 所以 public/ 里不再出现 cdn.jsdelivr.net 的外链（B3）。
+#
+# 各路径都对照 themes/liubai/assets/lib/ 下真实存在的文件，避免 resources.Get 取不到而 404。
+prefix:
+  libFiles: ""
+  # 社交/分享图标用 simple-icons，已在 assets/lib/simple-icons/icons/ 下 vendored（2240 个 svg）
+  simpleIcons: "lib/simple-icons/icons"
+libFiles:
+  normalizeCSS: lib/normalize/normalize.min.css
+  fontawesomeFreeCSS: lib/fontawesome-free/all.min.css
+  animateCSS: lib/animate/animate.min.css
+  autocompleteJS: lib/autocomplete/autocomplete.min.js
+  lunrJS: lib/lunr/lunr.min.js
+  algoliasearchJS: lib/algoliasearch/algoliasearch-lite.umd.min.js
+  lazysizesJS: lib/lazysizes/lazysizes.min.js
+  objectFitImagesJS: lib/object-fit-images/ofi.min.js
+  twemojiJS: lib/twemoji/twemoji.min.js
+  lightgalleryCSS: lib/lightgallery/lightgallery.min.css
+  lightgalleryJS: lib/lightgallery/lightgallery.min.js
+  lightgalleryThumbnailJS: lib/lightgallery/plugins/lg-thumbnail.min.js
+  lightgalleryZoomJS: lib/lightgallery/plugins/lg-zoom.min.js
+  clipboardJS: lib/clipboard/clipboard.min.js
+  sharerJS: lib/sharer/sharer.min.js
+  typeitJS: lib/typeit/index.umd.js
+  katexCSS: lib/katex/katex.min.css
+  katexJS: lib/katex/katex.min.js
+  katexAutoRenderJS: lib/katex/auto-render.min.js
+  katexCopyTexCSS: lib/katex/copy-tex.min.css
+  katexCopyTexJS: lib/katex/copy-tex.min.js
+  katexMhchemJS: lib/katex/mhchem.min.js
+  mermaidJS: lib/mermaid/mermaid.min.js
+  echartsJS: lib/echarts/echarts.min.js
+  mapboxGLCSS: lib/mapbox-gl/mapbox-gl.min.css
+  mapboxGLJS: lib/mapbox-gl/mapbox-gl.min.js
+  aplayerCSS: lib/aplayer/APlayer.min.css
+  aplayerJS: lib/aplayer/APlayer.min.js
+  metingJS: lib/meting/Meting.min.js
+  gitalkCSS: lib/gitalk/gitalk.css
+  gitalkJS: lib/gitalk/gitalk.min.js
+  valineJS: lib/valine/Valine.min.js
+  cookieconsentCSS: lib/cookieconsent/cookieconsent.min.css
+  cookieconsentJS: lib/cookieconsent/cookieconsent.min.js

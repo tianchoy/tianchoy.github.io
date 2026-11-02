@@ -514,6 +514,23 @@
         throw err;
       }
     }
+    // 体验项：Umami 脚本地址必须是个合法的 http(s) 绝对地址，否则拼出来的 <script src>
+    // 是坏的，页面静默不统计还不好排查。这里拦在保存之前。
+    if (p === 'umami') {
+      const script = umamiScript.value.trim();
+      let ok = false;
+      try {
+        const u = new URL(script);
+        ok = u.protocol === 'http:' || u.protocol === 'https:';
+      } catch {
+        ok = false;
+      }
+      if (!ok) {
+        const err = new Error('Umami 脚本地址必须是以 http(s):// 开头的完整地址');
+        err.focusEl = umamiScript;
+        throw err;
+      }
+    }
     return {
       provider: p,
       goatcounterSite: normalizeGcSite(gcSite.value),

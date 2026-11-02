@@ -159,7 +159,10 @@ a:hover { text-decoration: underline; }
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--text-3) 16%, transparent);
 }
 /* 停止后正文变暗，明确这页已经不能操作了（顶栏保持原样，状态才看得清） */
-body.is-stopped main.page { opacity: .5; pointer-events: none; transition: opacity .25s ease; }
+/* B5：发布页正文是 <main class="workspace">，原来只盖了 main.page，关服务后仍能在发布页编辑。
+   这里把 workspace 一并纳入，关服务后整页都不能操作。 */
+body.is-stopped main.page,
+body.is-stopped main.workspace { opacity: .5; pointer-events: none; transition: opacity .25s ease; }
 
 /* ---------- 按钮 / 表单 ---------- */
 

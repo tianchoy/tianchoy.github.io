@@ -22,17 +22,28 @@ hugo --gc --minify --cleanDestinationDir
 
 # 提交并推送源码，触发 GitHub Actions 构建发布
 git add -A
+
+# 草稿（frontmatter 含 draft: true）属于没写完的私稿，不该进公开仓库。
+# 这里只从「暂存区」移除（文件仍留在本地磁盘），既不会推上线，
+# 也不会误删本地草稿；等哪天正式发布（draft:false）时再由下面的流程提交。
+for f in $(git diff --cached --name-only -- 'content/posts/'); do
+  [ -f "$f" ] || continue
+  if head -15 "$f" | grep -qiE '^[[:space:]]*draft:[[:space:]]*true[[:space:]]*$'; then
+    git reset -q HEAD -- "$f" >/dev/null 2>&1 || true
+  fi
+done
+
 git diff --cached --quiet || git commit -m "blog update: $(date '+%Y-%m-%d %H:%M')"
 
-# 在 GitHub 网页上直接改过文件时，本地会落后一个提交导致 push 被拒；
-# 自动 rebase 再推一次，省得回来手动处理
-if ! git push origin main; then
+# 推送到当前分支（不再写死 main，兼容分支重命名 / 多分支工作流）
+BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+if ! git push origin "$BRANCH"; then
   echo "推送被拒，先同步远端再重试…" >&2
-  if ! git pull --rebase --autostash origin main; then
+  if ! git pull --rebase --autostash origin "$BRANCH"; then
     # rebase 冲突时仓库会停在中间态，之后每次发布都会失败，先退干净再说
     git rebase --abort 2>/dev/null || true
-    echo "同步远端失败（可能有冲突）：请手动运行 git pull --rebase origin main 处理后再发布。" >&2
+    echo "同步远端失败（可能有冲突）：请手动运行 git pull --rebase origin $BRANCH 处理后再发布。" >&2
     exit 1
   fi
-  git push origin main
+  git push origin "$BRANCH"
 fi

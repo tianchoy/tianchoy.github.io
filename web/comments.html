@@ -14,7 +14,7 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     line-height: 1.55;
-    color: var(--fg, #333);
+    color: var(--text, #333);
   }
   .cmt-text.is-open {
     -webkit-line-clamp: unset;
@@ -185,6 +185,9 @@
   let page = 1;
   let totalPages = 1;
   let counts = { spam: 0, waiting: 0 };
+  // 体验项：翻页/搜索时可能连续发多个请求，用递增序号丢弃「迟到」的旧响应，
+  // 避免上一页的数据把当前页覆盖掉。
+  let loadSeq = 0;
 
   // 评论正文是 HTML 片段，展示前剥掉标签（服务端已做过 XSS 过滤，这里只求排版干净）
   const toText = (html) => {
@@ -301,6 +304,8 @@
     if (nav.dataset.nav === 'prev' && page > 1) page--;
     else if (nav.dataset.nav === 'next' && page < totalPages) page++;
     else return;
+    // 体验项：翻页时把已选中的项清空，否则跨页勾选的 id 对不上当前页，批量操作会误伤
+    picked.clear();
     load();
   });
 
@@ -420,6 +425,7 @@
   }
 
   async function load(opts = {}) {
+    const mySeq = ++loadSeq; // 本次请求序号，晚到的旧响应凭它作废
     const params = new URLSearchParams({
       status: statusEl.value,
       keyword: qEl.value.trim(),
@@ -429,6 +435,8 @@
     });
     try {
       const data = await api('/api/comments?' + params.toString());
+      // 期间又发了更新的请求（翻页/搜索/刷新），这次结果已经过期，丢弃
+      if (mySeq !== loadSeq) return;
       serverURL = data.serverURL || '';
       siteURL = data.siteURL || siteURL;
       $('btnOpenAdmin').hidden = !serverURL;

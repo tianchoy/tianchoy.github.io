@@ -295,12 +295,22 @@ async function createPost({ category, title, content, tags, draft }) {
 
 // ---------- 部署 ----------
 
+// 部署异常（超时 / 崩溃）后 .git/index.lock 可能残留，会卡死后续所有 git 操作。
+// 因为发布是串行的（deployQueue），此刻没有别的 git 在跑，删掉它是安全的。
+function cleanupGitLock() {
+  const lock = path.join(ROOT, ".git", "index.lock");
+  fsp.rm(lock, { force: true }).catch(() => {});
+}
+
 function doDeploy() {
   return new Promise((resolve) => {
     const started = Date.now();
+    // detached 让 bash 成为独立进程组的组长；超时杀「整个组」，
+    // 否则只 kill bash，它拉起来的 hugo/git 会变成孤儿继续跑，还会留下 index.lock。
     const child = spawn("bash", ["deploy.sh"], {
       cwd: ROOT,
       env: PATH_ENV,
+      detached: true,
     });
     let out = "";
     let settled = false;
@@ -308,14 +318,20 @@ function doDeploy() {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
+      cleanupGitLock();
       resolve(r);
     };
     // 网络卡住时 git push 可能一直不返回，别让请求和后续发布无限等下去
     const timer = setTimeout(() => {
       try {
-        child.kill("SIGKILL");
+        // 负 pid = 整个进程组；优先用这个，确保 hugo/git 一起被清掉
+        process.kill(-child.pid, "SIGKILL");
       } catch {
-        /* ignore */
+        try {
+          child.kill("SIGKILL");
+        } catch {
+          /* ignore */
+        }
       }
       finish({ ok: false, code: -1, output: out + "\n部署超时（超过 5 分钟），已终止", ms: Date.now() - started });
     }, 5 * 60 * 1000);
@@ -516,12 +532,13 @@ const server = http.createServer(async (req, res) => {
       }
       const result = await saveSiteSettings(payload);
       const deploy = await deployOrSkip(!shouldDeploy(payload));
-      return sendJSON(res, deploy.ok ? 200 : 500, {
-        ok: deploy.ok,
+      return sendJSON(res, 200, {
+        ok: true,
         site: result.site,
         social: result.social,
         analytics: result.analytics,
         catalog: result.catalog,
+        deployed: deploy.ok,
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
         deploy,
       });
@@ -538,11 +555,12 @@ const server = http.createServer(async (req, res) => {
       }
       const about = await saveAboutPage(payload);
       const deploy = await deployOrSkip(!shouldDeploy(payload));
-      return sendJSON(res, deploy.ok ? 200 : 500, {
-        ok: deploy.ok,
+      return sendJSON(res, 200, {
+        ok: true,
         about,
         // 前端要拿它做「线上地址」链接，必须是绝对地址，别在页面里写死域名
         permalink: `${siteBaseURL()}/about/`,
+        deployed: deploy.ok,
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
         deploy,
       });
@@ -598,12 +616,17 @@ const server = http.createServer(async (req, res) => {
         tags: cleanTags(payload.tags),
         draft: payload.draft === true,
       });
-      // 草稿只写本地文件、不推送；正式发布才部署
+      // 草稿只写本地文件、不推送；正式发布才部署。
+      // 关键：文件已落地就视为「保存成功」（HTTP 200 + ok:true），部署失败只通过
+      // deployed 字段反馈，前端据此提示「已保存但发布失败、可重试」，而不会误判成
+      // 保存失败进而重复发布生成 标题-2.md（A3）。
       const deploy = await deployOrSkip(payload.draft === true);
-      return sendJSON(res, deploy.ok ? 200 : 500, {
-        ok: deploy.ok,
+      return sendJSON(res, 200, {
+        ok: true,
+        saved: true,
         file: created.file,
         permalink: created.permalink,
+        deployed: deploy.ok,
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
         deploy,
       });
@@ -797,12 +820,14 @@ const server = http.createServer(async (req, res) => {
       const draftNow = typeof payload.draft === "boolean" ? payload.draft : saved.draftBefore;
       const flipped = typeof payload.draft === "boolean" && payload.draft !== saved.draftBefore;
       const deploy = await deployOrSkip(draftNow && !flipped);
-      return sendJSON(res, deploy.ok ? 200 : 500, {
-        ok: deploy.ok,
+      // 同 /api/publish：保存成功即 200，部署失败只通过 deployed 反馈（A3）
+      return sendJSON(res, 200, {
+        ok: true,
         saved: true,
         file: saved.file,
         permalink: saved.permalink,
         draftBefore: saved.draftBefore,
+        deployed: deploy.ok,
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
         deploy,
       });
@@ -812,10 +837,13 @@ const server = http.createServer(async (req, res) => {
       const payload = await readJSON(req);
       const { deleted, missing } = await deletePosts(payload.files);
       const deploy = await deployOrSkip(!shouldDeploy(payload));
-      return sendJSON(res, deploy.ok ? 200 : 500, {
-        ok: deploy.ok,
+      // 删除成功即 200；部署失败也照常回 200，但带 deployed:false，前端会提示
+      // 「已删除但发布失败」（文件已删，只是没推上去），而不是误判删除失败（A3）
+      return sendJSON(res, 200, {
+        ok: true,
         deleted,
         missing,
+        deployed: deploy.ok,
         error: deploy.ok ? undefined : `已删除 ${deleted.length} 篇，但部署失败（退出码 ${deploy.code}）`,
         deploy,
       });

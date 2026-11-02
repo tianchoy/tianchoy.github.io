@@ -21,8 +21,10 @@ summaryLength = 30
   pagerSize = 10
 
 # 生成首页 JSON 搜索索引（主题 lunr 搜索需要 /index.json）
+# B1：原先只列 HTML/JSON，把主题内置的 RSS 顶掉了，首页 /index.xml 不生成。
+# 加上 RSS 后 link.html 里的 <link rel="alternate" type="application/rss+xml"> 才有东西可指。
 [outputs]
-  home = ["HTML", "JSON"]
+  home = ["HTML", "JSON", "RSS"]
 
 [taxonomies]
   category = "categories"
@@ -40,6 +42,10 @@ summaryLength = 30
   # 站点级关键词：首页/列表页用。文章页自动改用该文的 tags。
   # 2026-10-30 调整：按用户指定，聚焦「散文/随笔/个人博客/个人网站」定位。
   keywords = ["散文", "随笔", "日记", "博客", "个人博客", "个人网站"]
+
+  # B8：站点作者（publisher / author 结构化数据用）。seo.html 取 .Site.Params.author.name，
+  # 原先没设，导致 JSON-LD 里 publisher.name 是一串空字符串。
+  author = { name = "田超" }
 
   # 站内搜索：主题的 lunr 方案，索引为构建产物 /index.json
   # 中文分词由 assets/lib/lunr/lunr.segmentit.js 覆盖主题的 3.7MB 词典实现
@@ -123,7 +129,19 @@ summaryLength = 30
   [params.app]
     # 不设的话主题默认输出 "My LiuBai site"（application-name / apple-mobile-web-app-title）
     title = "特严赤傲"
-    svgFavicon = "images/favicon.svg"
+    # B2：原值是相对路径 "images/favicon.svg"，在内页（如 /about/）会被解析成
+    # /about/images/favicon.svg 而 404。改成绝对路径，全站统一指向 /images/favicon.svg。
+    svgFavicon = "/images/favicon.svg"
+
+  # B8：结构化数据 / 社交分享卡片用的封面图。没设时 JSON-LD 的 image 与
+  # opengraph 的 og:image 都是空（seo.html 取 .Site.Params.seo.image）。
+  [params.seo]
+    image = "/images/og-cover.png"
+
+  # B3：站点资源改走本地 lib，不再依赖 jsdelivr CDN（国内常超时/被墙）。
+  # 对应 assets/data/cdn/local.yml（各 xxxJS/CSS 指向主题内置的本地 lib/ 副本）。
+  [params.cdn]
+    data = "local"
 
   [params.home]
     rss = 10

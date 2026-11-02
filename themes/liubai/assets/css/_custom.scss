@@ -989,7 +989,10 @@ body[theme="dark"] {
   line-height: 1.9;
 
   .footer-item,
-  .busuanzi-stats {
+  // B6：.busuanzi-stats 原本无条件 display:inline-flex，会盖过 [hidden] 的 display:none，
+  // 导致 gc-stats 在 JS 拉到数据前就露出「本站浏览 – 次 · 本页阅读量 – 次」。
+  // 用 :not([hidden]) 限定，hidden 属性在时老老实实隐藏，JS 置 hidden=false 后才显示。
+  .busuanzi-stats:not([hidden]) {
     display: inline-flex;
     align-items: center;
     white-space: nowrap;

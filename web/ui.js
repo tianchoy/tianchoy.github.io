@@ -6,6 +6,9 @@
     if (!el) {
       el = document.createElement("div");
       el.className = "toast-wrap";
+      // 可访问性：让读屏软件把提示条当状态变更朗读出来（aria-live=polite）
+      el.setAttribute("role", "status");
+      el.setAttribute("aria-live", "polite");
       document.body.appendChild(el);
     }
     return el;
@@ -98,10 +101,27 @@
         if (e.key === "Escape") {
           e.preventDefault();
           finish(input ? null : false);
-        } else if (e.key === "Enter" && !(e.target instanceof HTMLTextAreaElement)) {
-          e.preventDefault();
-          finish(input ? inputEl.value.trim() : true);
+      } else if (e.key === "Enter" && !e.shiftKey && !(e.target instanceof HTMLTextAreaElement)) {
+        // 体验项：Shift+Enter 不当作确认（常见于多行输入里换行），只有纯 Enter 才确认
+        e.preventDefault();
+        finish(input ? inputEl.value.trim() : true);
+      } else if (e.key === "Tab") {
+        // 可访问性：焦点困在弹窗内，Tab / Shift+Tab 在首尾之间循环，不会跑到背后页面
+        const f = modal.querySelectorAll(
+          'button:not([disabled]), [href], input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])'
+        );
+        if (f.length) {
+          const first = f[0];
+          const last = f[f.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
         }
+      }
       };
 
       okBtn.addEventListener("click", () => finish(input ? inputEl.value.trim() : true));
@@ -609,6 +629,9 @@
     }
 
     function open() {
+      // 体验项：已经展开时就别再重建（否则每次 ArrowDown 都会把高亮重置回当前项，
+      // 导致从触发按钮连续按 ↓ 始终选不到第二项）。直接交给下面的 moveActive 继续移动。
+      if (openWrap === wrap) return;
       closeMenus(wrap);
       openWrap = wrap;
       openedAt = performance.now();

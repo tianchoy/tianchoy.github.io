@@ -23,10 +23,10 @@
                 </span>
             {{- end -}}
 
-            {{- /* Author */ -}}
+            {{- /* 站点名称（写作台 [params.app].title / 根 title 同步而来），最右侧展示，不再显示作者真名 */ -}}
             {{- if ne .Site.Params.footer.author false -}}
-                {{- $author := .Site.Params.Author.name | default .Site.Title -}}
-                <span class="footer-item author" itemprop="copyrightHolder"><a href="{{ $.Site.Params.Author.link | default .Site.Home.RelPermalink }}" target="_blank">{{ $author }}</a></span>
+                {{- $siteName := .Site.Title | default .Site.Params.Author.name -}}
+                <span class="footer-item author" itemprop="copyrightHolder"><a href="{{ .Site.Home.RelPermalink }}">{{ $siteName }}</a></span>
             {{- end -}}
 
             {{- /* License */ -}}

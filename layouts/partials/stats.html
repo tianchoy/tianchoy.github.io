@@ -18,52 +18,96 @@
     {{- $host := printf "https://%s.goatcounter.com" $site -}}
     {{- $counters := true -}}
     {{- if isset $gc "counters" -}}{{- $counters = $gc.counters -}}{{- end -}}
+
+    {{- /* 本页统计路径由 Hugo 在构建期生成（RelPermalink，全站唯一、含百分号编码），
+           同时喂给 count.js 的 settings.path 和下面的自写查询脚本，让「上报」与「查询」
+           严格使用同一个字符串。以前上报走 count.js 的 get_path()（读 canonical 的
+           pathname），查询却用 decodeURIComponent(location.pathname) 后再裸拼 URL，
+           中文路径在编码/解码两种形态间漂移，导致阅读量被分散记到不同 key、页脚永远
+           读到 0 或旧 diary 的固定值。显式固定 path 后所有设备才会累计到同一条记录上。
+           另外后台必须勾选 Allow adding visitor counts on your website，否则取数 403。 */ -}}
+    {{- $pagePath := .RelPermalink | default "/" -}}
+    {{- $settings := dict "path" $pagePath | jsonify -}}
+
     {{- if $counters }}
-<div class="busuanzi-stats gc-stats" id="gc-stats" hidden>
+<div class="busuanzi-stats gc-stats" id="gc-stats" data-path="{{ $pagePath }}" hidden>
   <span>本站浏览 <span id="gc-total">–</span> 次</span>
   <span class="busuanzi-sep">·</span>
   <span>本页阅读量 <span id="gc-page">–</span> 次</span>
 </div>
     {{- end }}
-<script data-goatcounter="{{ $host }}/count" async src="https://gc.zgo.at/count.js"></script>
+
+    {{- /* count.js 本地化：原先引用 https://gc.zgo.at/count.js，是国内唯一还在依赖的
+           第三方 CDN，实测多次直接超时；脚本加载失败就完全没有 /count 上报，访问量
+           自然不涨。官方源码为 ISC 许可，随站点发布到 /lib/goatcounter/count.js。 */ -}}
+<script data-goatcounter="{{ $host }}/count" data-goatcounter-settings="{{ $settings }}" async src="/lib/goatcounter/count.js"></script>
+
     {{- if $counters }}
 <script>
 (function () {
-  /* GoatCounter 的 counter 接口：/counter/<path>.json，path 是浏览器 location.pathname
-     的原样值（已做百分号编码，中文路径直接可用），首页就是 /counter//.json；
-     全站总量用保留字 TOTAL（大写、没有前导斜杠）。
-     注意：后台必须勾选 Allow adding visitor counts on your website，
-     否则这里会拿到 403，统计条保持隐藏。
-     另外：本站曾把分类 diary 改名为 随笔，文章 URL 随之从 /posts/diary/<slug>/
-     变为 /posts/随笔/<slug>/，历史阅读量仍记在旧路径下。所以本页阅读量在查当前
-     路径的同时，也查一份旧 diary 路径并合计，改名后阅读量才不会凭空归零。 */
   var base = '{{ $host }}/counter/';
-  function getCount(path) {
-    return fetch(base + path + ".json", { credentials: "omit" })
-      .then(function (r) {
-        if (r.status === 200) return r.json();
-        if (r.status === 404) return { count: 0, count_unique: 0 }; // 无记录即 0 次，不是错误
-        return null;
-      })
-      .then(function (d) { return (d && d.count != null) ? (parseInt(d.count, 10) || 0) : 0; })
+  var box = document.getElementById('gc-stats');
+  if (!box) return;
+  // 路径从 data-path 读，避免在 <script> 上下文里由模板引擎二次转义引号
+  // （曾出现 pagePath 变成 '"/posts/..."' 这种多包一层引号的值）。
+  var pagePath = box.getAttribute('data-path') || '/';
+
+  function decodeSafe(s) {
+    try { return decodeURIComponent(s); } catch (e) { return s; }
+  }
+  // GoatCounter 的 count 是「带千分位分隔符的字符串」（如 "1,234"），
+  // 直接 parseInt 会在过千时截成 1；先剔除非数字字符再解析。
+  function toNum(d) {
+    if (!d) return 0;
+    var v = (d.count != null) ? d.count : d.count_unique;
+    if (v == null) return 0;
+    return parseInt(String(v).replace(/[^0-9]/g, ''), 10) || 0;
+  }
+  function fetchCount(url) {
+    // 官方 counter 响应最长缓存 4 小时；加随机参数 + no-store 尽量绕开浏览器/CDN 层缓存，
+    // 服务端聚合延迟无法绕过，属预期行为。
+    return fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + '_=' + Date.now(),
+                 { credentials: 'omit', cache: 'no-store' })
+      .then(function (r) { return r.status === 200 ? r.json().then(toNum) : 0; })
       .catch(function () { return 0; });
   }
-  var page = decodeURIComponent(location.pathname || "/");
-  var legacyPage = page.replace(/\/posts\/随笔\//, "/posts/diary/");
-  var pagePaths = [page];
-  if (legacyPage !== page) pagePaths.push(legacyPage);
+  // 官方格式是 /counter/<encodeURIComponent(path)>.json；但 GoatCounter 服务端对中文路径
+  // 可能保留百分号编码，也可能归一化成 Unicode，故两种表示各查一次，取较大值。
+  // 这些只是同一条记录的不同查询形态，绝不能相加，否则会把同一篇的阅读量翻倍。
+  function urlsFor(path) {
+    var forms = [path], d = decodeSafe(path), out = [];
+    if (d !== path) forms.push(d);
+    forms.forEach(function (f) {
+      var enc = base + encodeURIComponent(f) + '.json';
+      var raw = base + f + '.json';
+      if (out.indexOf(enc) < 0) out.push(enc);
+      if (out.indexOf(raw) < 0) out.push(raw);
+    });
+    return out;
+  }
+  function maxCount(urls) {
+    return Promise.all(urls.map(fetchCount)).then(function (ns) {
+      return ns.reduce(function (a, b) { return Math.max(a, b); }, 0);
+    });
+  }
+
+  // 本站曾把分类 diary 改名 随笔，文章 URL 从 /posts/diary/<slug>/ 变为
+  // /posts/随笔/<slug>/，改名前的阅读量仍记在旧路径下。旧路径是独立的一条历史记录，
+  // 与当前路径相加，改名后数字才不会凭空归零。
+  var decoded = decodeSafe(pagePath);
+  var legacy = decoded.replace(/\/posts\/随笔\//, '/posts/diary/');
+  var legacyTask = (legacy !== decoded) ? maxCount(urlsFor(legacy)) : Promise.resolve(0);
+
   Promise.all([
-    getCount("TOTAL"),
-    Promise.all(pagePaths.map(getCount))
+    fetchCount(base + 'TOTAL.json'),
+    maxCount(urlsFor(pagePath)),
+    legacyTask
   ]).then(function (res) {
-    var total = res[0];
-    var pageSum = res[1].reduce(function (a, b) { return a + b; }, 0);
-    var box = document.getElementById("gc-stats");
-    if (!box) return;
-    var totalEl = document.getElementById("gc-total");
-    var pageEl = document.getElementById("gc-page");
+    var total = res[0], pageSum = res[1] + res[2];
+    var totalEl = document.getElementById('gc-total');
+    var pageEl = document.getElementById('gc-page');
     if (totalEl) totalEl.textContent = total;
-    if (pageEl) pageEl.textContent = pageSum; // 0 也正常显示，不再留占位符
+    if (pageEl) pageEl.textContent = pageSum;
     if (total > 0 || pageSum > 0) box.hidden = false;
   });
 })();

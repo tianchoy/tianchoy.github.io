@@ -29,8 +29,23 @@
     {{- $pagePath := .RelPermalink | default "/" -}}
     {{- $settings := dict "path" $pagePath | jsonify -}}
 
+    {{- /* 历史 URL（frontmatter aliases）：分类 diary 改名 随笔 后，旧访问量仍记在
+           /posts/diary/<原始文件名>/ 下。旧代码硬编码「随笔→diary + 当前 slug」是错的：
+           旧地址用的是原始文件名（含空格、逗号、书名号），和现在的 slug 几乎全不一样，
+           实测 38 篇里只有 1988 一篇碰巧命中，其余 10 篇有数据的文章全部漏计。
+           改成逐篇读 .Aliases 交给查询脚本，改名/改 slug 都能自动跟上。
+           GoatCounter 存的是浏览器 pathname 的百分号编码字符串，查询时还要再
+           encodeURIComponent 一次，直接拿 Unicode 拼会一律 404。 */ -}}
+    {{- $legacy := slice -}}
+    {{- range .Aliases -}}
+      {{- $u := string . -}}
+      {{- $u = replaceRE `^https?://[^/]+` "" $u -}}
+      {{- if and $u (ne $u $pagePath) -}}{{- $legacy = $legacy | append $u -}}{{- end -}}
+    {{- end -}}
+    {{- $legacyJSON := $legacy | jsonify -}}
+
     {{- if $counters }}
-<div class="busuanzi-stats gc-stats" id="gc-stats" data-path="{{ $pagePath }}" hidden>
+<div class="busuanzi-stats gc-stats" id="gc-stats" data-path="{{ $pagePath }}" data-legacy="{{ $legacyJSON }}" hidden>
   <span>本站浏览 <span id="gc-total">–</span> 次</span>
   <span class="busuanzi-sep">·</span>
   <span>本页阅读量 <span id="gc-page">–</span> 次</span>
@@ -52,9 +67,6 @@
   // （曾出现 pagePath 变成 '"/posts/..."' 这种多包一层引号的值）。
   var pagePath = box.getAttribute('data-path') || '/';
 
-  function decodeSafe(s) {
-    try { return decodeURIComponent(s); } catch (e) { return s; }
-  }
   // GoatCounter 的 count 是「带千分位分隔符的字符串」（如 "1,234"），
   // 直接 parseInt 会在过千时截成 1；先剔除非数字字符再解析。
   function toNum(d) {
@@ -71,19 +83,37 @@
       .then(function (r) { return r.status === 200 ? r.json().then(toNum) : 0; })
       .catch(function () { return 0; });
   }
-  // 官方格式是 /counter/<encodeURIComponent(path)>.json；但 GoatCounter 服务端对中文路径
-  // 可能保留百分号编码，也可能归一化成 Unicode，故两种表示各查一次，取较大值。
-  // 这些只是同一条记录的不同查询形态，绝不能相加，否则会把同一篇的阅读量翻倍。
-  function urlsFor(path) {
-    var forms = [path], d = decodeSafe(path), out = [];
-    if (d !== path) forms.push(d);
-    forms.forEach(function (f) {
-      var enc = base + encodeURIComponent(f) + '.json';
-      var raw = base + f + '.json';
-      if (out.indexOf(enc) < 0) out.push(enc);
-      if (out.indexOf(raw) < 0) out.push(raw);
-    });
+  function uniq(xs) {
+    var out = [];
+    xs.forEach(function (x) { if (out.indexOf(x) < 0) out.push(x); });
     return out;
+  }
+  // 后台存的 key 就是浏览器 location.pathname 的百分号编码字符串本身，
+  // 所以查询 URL 必须是 encodeURIComponent(那个字符串)——路径里原有的 % 会变成 %25。
+  // 拿解码后的 Unicode 去查一律 404：实测 38 篇里只有纯 ASCII 的 1988 能命中。
+  // raw 拼接只对纯 ASCII 路径有效，留作兼容；同一条记录的多种形态取 max，绝不相加。
+  function urlsFor(path) {
+    return uniq([
+      base + encodeURIComponent(path) + '.json',
+      base + path + '.json'
+    ]);
+  }
+  // aliases 里的旧地址是 Unicode 明文（含空格、逗号、书名号），先还原成浏览器
+  // pathname 的编码形态（逐段编码，保留 /），再按上面的规则拼查询 URL。
+  function pathnameForm(p) {
+    return p.split('/').map(function (seg) {
+      try { seg = decodeURIComponent(seg); } catch (e) {}
+      return encodeURIComponent(seg);
+    }).join('/');
+  }
+  function legacyUrls(p) {
+    var e = pathnameForm(p);
+    return uniq([
+      base + encodeURIComponent(e) + '.json',
+      base + e + '.json',
+      base + encodeURIComponent(p) + '.json',
+      base + encodeURIComponent(e.replace(/\/$/, '')) + '.json'
+    ]);
   }
   function maxCount(urls) {
     return Promise.all(urls.map(fetchCount)).then(function (ns) {
@@ -91,19 +121,21 @@
     });
   }
 
-  // 本站曾把分类 diary 改名 随笔，文章 URL 从 /posts/diary/<slug>/ 变为
-  // /posts/随笔/<slug>/，改名前的阅读量仍记在旧路径下。旧路径是独立的一条历史记录，
-  // 与当前路径相加，改名后数字才不会凭空归零。
-  var decoded = decodeSafe(pagePath);
-  var legacy = decoded.replace(/\/posts\/随笔\//, '/posts/diary/');
-  var legacyTask = (legacy !== decoded) ? maxCount(urlsFor(legacy)) : Promise.resolve(0);
+  // 历史地址由 Hugo 从 frontmatter aliases 注入（见 #gc-stats 的 data-legacy）。
+  // 每个 alias 是独立的一条历史记录：内部多种查询形态取 max，不同 alias 之间才相加。
+  // 没有 aliases 的页面（首页/分类页/新文章）数组为空，只统计当前路径。
+  var legacyPaths = [];
+  try { legacyPaths = JSON.parse(box.getAttribute('data-legacy') || '[]'); } catch (e) {}
+  if (!(legacyPaths instanceof Array)) legacyPaths = [];
 
   Promise.all([
     fetchCount(base + 'TOTAL.json'),
     maxCount(urlsFor(pagePath)),
-    legacyTask
+    Promise.all(legacyPaths.map(function (p) { return maxCount(legacyUrls(p)); }))
   ]).then(function (res) {
-    var total = res[0], pageSum = res[1] + res[2];
+    var total = res[0];
+    var legacySum = res[2].reduce(function (a, b) { return a + b; }, 0);
+    var pageSum = res[1] + legacySum;
     var totalEl = document.getElementById('gc-total');
     var pageEl = document.getElementById('gc-page');
     if (totalEl) totalEl.textContent = total;

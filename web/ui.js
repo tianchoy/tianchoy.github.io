@@ -748,7 +748,29 @@
     bindDismiss();
   }
 
-  window.WB = { api, toast, renderMarkdown, countWords, esc, initTopbar, enhanceAllSelects, confirmDialog, promptDialog };
+  /* ---------- 页面加载指示 ---------- */
+  // 图标的 markup 写在各页面 <body> 开头，首屏即可见；这里只负责「加载完」把它淡出。
+  // 各页面在自己的初始化函数末尾调 WB.ready()（初始数据回来才算完，而不是只等 DOM），
+  // 另有 8s 硬兜底：页面脚本抛错或接口卡住时也不能让转圈一直挂着。
+  let loaderDone = false;
+  const loaderStart = Date.now();
+
+  function ready() {
+    const el = document.getElementById("wbLoader");
+    if (!el || loaderDone) return;
+    loaderDone = true;
+    // 本地接口常常几十毫秒就回，至少留 240ms，否则图标一闪而过反而像闪屏故障
+    const wait = Math.max(0, 240 - (Date.now() - loaderStart));
+    setTimeout(() => {
+      el.classList.add("is-done");
+      el.setAttribute("aria-hidden", "true");
+      setTimeout(() => el.remove(), 260);
+    }, wait);
+  }
+
+  setTimeout(ready, 8000);
+
+  window.WB = { api, toast, renderMarkdown, countWords, esc, initTopbar, enhanceAllSelects, confirmDialog, promptDialog, ready };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", enhanceAllSelects);
   else enhanceAllSelects();
 })();

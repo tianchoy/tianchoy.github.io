@@ -1035,3 +1035,55 @@ select { appearance: none; background-image: none; cursor: pointer; }
 .cs-opt > .si { width: 1.1em; height: 1.1em; }
 .social-name > .si { width: 1.05em; height: 1.05em; margin-right: 3px; }
 .pp-social > .si { width: 1.05em; height: 1.05em; margin: 0 2px; }
+
+/* ---------- 页面加载指示 ----------
+   markup 放在各页面 <body> 开头，首屏就能看到，不必等 ui.js 执行。
+   初始数据回来后由 WB.ready() 加 .is-done 淡出；ui.js 另有 8s 硬兜底，
+   防止页面脚本报错或接口卡住时转圈一直不消失。 */
+.wb-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  backdrop-filter: blur(4px);
+  transition: opacity .24s ease, visibility .24s ease;
+}
+.wb-loader.is-done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.wb-loader-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-md);
+}
+.wb-loader-spin {
+  width: 30px;
+  height: 30px;
+  animation: wb-spin .9s linear infinite;
+}
+.wb-loader-track { stroke: var(--border-strong); }
+.wb-loader-arc {
+  stroke: var(--accent);
+  stroke-dasharray: 80 34;
+}
+.wb-loader-text {
+  font-size: 12px;
+  letter-spacing: .06em;
+  color: var(--text-3);
+}
+@keyframes wb-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .wb-loader-spin { animation-duration: 2.4s; }
+  .wb-loader { transition: none; }
+}

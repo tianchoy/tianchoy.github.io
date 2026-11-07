@@ -44,6 +44,16 @@
 </head>
 <body>
 
+<div class="wb-loader" id="wbLoader" role="status" aria-live="polite" aria-label="页面加载中">
+  <div class="wb-loader-box">
+    <svg class="wb-loader-spin" viewBox="0 0 44 44" aria-hidden="true">
+      <circle class="wb-loader-track" cx="22" cy="22" r="18" fill="none" stroke-width="3"></circle>
+      <circle class="wb-loader-arc" cx="22" cy="22" r="18" fill="none" stroke-width="3" stroke-linecap="round"></circle>
+    </svg>
+    <span class="wb-loader-text">正在加载…</span>
+  </div>
+</div>
+
 <header class="topbar">
   <div class="topbar-inner">
     <a class="brand" href="/publish">
@@ -489,7 +499,7 @@
     }
   }
 
-  load();
+  load().finally(() => window.WB.ready());
 })();
 </script>
 </body>

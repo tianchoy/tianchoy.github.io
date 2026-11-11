@@ -1012,6 +1012,8 @@ body[theme="dark"] {
 // 因为 header 是 position:fixed，滚动时靠 backdrop-filter 挡住从下方穿过的正文。
 // 2026-11-11 二次调整：底色透明度从 .72 降到 .4 上下、模糊半径 18px→30px，
 // 让正文滚动到导航下方时被真正「糊」成一层雾，而不是看成一块半实色板。
+// 2026-11-11 三次调整：按用户要求彻底去掉下边线。玻璃层已经靠模糊和高光与
+// 正文分开，再画一条灰线反而把「悬浮感」拉回成一条贴死的横条。
 // 不改 $header-background-color：它还被 .fixed-button（回到顶部按钮）复用，
 // 那里保留浅灰圆底反而更清楚；受它影响的搜索框与移动端菜单在下面单独覆盖。
 $nav-soft: rgba(0, 0, 0, .56);
@@ -1022,17 +1024,17 @@ $nav-soft-dark: rgba(255, 255, 255, .62);
 $nav-strong-dark: #f2f2f4;
 $nav-line-dark: rgba(255, 255, 255, .09);
 $nav-hover-bg-dark: rgba(255, 255, 255, .07);
-$nav--line-light:rgba(255,255,255,0)
 
 header {
   // 底色只留四成：透明部分交给 backdrop-filter 去「磨」，玻璃感来自模糊而不是白漆
   background-color: rgba(255, 255, 255, .4);
   // 顶部一道极淡的高光，给透明层一个玻璃上沿，避免和正文糊成一片
   background-image: linear-gradient(180deg, rgba(255, 255, 255, .45), rgba(255, 255, 255, 0) 65%);
-  border-bottom: 1px solid $nav-line;
+  // 主题原本的 2px 灰线一并清零；浅色暗色都不再有任何下边界
+  border-bottom: 0;
   -webkit-backdrop-filter: blur(30px) saturate(200%);
   backdrop-filter: blur(30px) saturate(200%);
-  transition: background-color .3s ease, border-color .3s ease, box-shadow .3s ease;
+  transition: background-color .3s ease, box-shadow .3s ease;
 
   // 主题 hover 时铺一层 1.5rem 的大阴影，和极简风格冲突
   &:hover {
@@ -1042,7 +1044,6 @@ header {
   [theme=dark] & {
     background-color: rgba(41, 42, 45, .30);
     background-image: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 65%);
-    border-bottom-color: $nav--line-light;
   }
 }
 
@@ -1196,11 +1197,13 @@ header {
   background-color: $nav-hover-bg-dark;
 }
 
-// 移动端下拉菜单：与顶栏同一套玻璃质感；它盖在正文上，透明度比顶栏略低，
-// 但同样靠 30px 模糊保证菜单文字不被背景干扰
+// 移动端下拉菜单：不跟着顶栏一起降到 .4 —— 它整块盖在正文上，实测在
+// fixed header 内子元素的 backdrop-filter 不足以糊掉底下的深色文字，太透会让
+// 首页标题和菜单项叠在一起。保留近实色底 + 下沿投影，但顶边不画线。
 #header-mobile .header-container .menu {
-  background: rgba(255, 255, 255, .72);
-  border-top: 1px solid $nav-line;
+  background: rgba(255, 255, 255, .94);
+  // 展开菜单与顶栏是同一块玻璃，中间不再画横线；层次交给下方投影
+  border-top: 0;
   box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, .05);
   -webkit-backdrop-filter: blur(30px) saturate(200%);
   backdrop-filter: blur(30px) saturate(200%);
@@ -1216,8 +1219,7 @@ header {
   }
 
   [theme=dark] & {
-    background: rgba(41, 42, 45, .72);
-    border-top-color: $nav-line-dark;
+    background: rgba(41, 42, 45, .94);
 
     .menu-item {
       color: $nav-soft-dark;

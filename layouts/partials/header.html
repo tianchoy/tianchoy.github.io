@@ -34,7 +34,13 @@
                         {{- with .Page -}}
                             {{- $url = .RelPermalink -}}
                         {{- end -}}
-                        <a class="menu-item{{ if $.IsMenuCurrent `main` . | or ($.HasMenuCurrent `main` .) | or (eq $.RelPermalink $url) }} active{{ end }}" href="{{ $url }}"{{ with .Title }} title="{{ . }}"{{ end }}{{ if (urls.Parse $url).Host }} rel="noopener noreferrer" target="_blank"{{ end }}>
+                        {{- $isActive := $.IsMenuCurrent `main` . | or ($.HasMenuCurrent `main` .) | or (eq $.RelPermalink $url) -}}
+                        {{- /* 文章/标签/分类的详情页不属于菜单的 section，主题默认不高亮任何入口；
+                               按 URL 首段补齐，文章页也能看到「文章」下的当前项下划线。 */ -}}
+                        {{- $curSeg := index (split (trim $.RelPermalink "/") "/") 0 -}}
+                        {{- $menuSeg := index (split (trim $url "/") "/") 0 -}}
+                        {{- if and (ne $menuSeg "") (eq $curSeg $menuSeg) -}}{{- $isActive = true -}}{{- end -}}
+                        <a class="menu-item{{ if $isActive }} active{{ end }}" href="{{ $url }}"{{ with .Title }} title="{{ . }}"{{ end }}{{ if (urls.Parse $url).Host }} rel="noopener noreferrer" target="_blank"{{ end }}>
                             {{- .Pre | safeHTML }} {{ .Name }} {{ .Post | safeHTML -}}
                         </a>
                     {{- end -}}
@@ -147,7 +153,11 @@
                     {{- with .Page -}}
                         {{- $url = .RelPermalink -}}
                     {{- end -}}
-                    <a class="menu-item" href="{{ $url }}" title="{{ .Title }}"{{ if (urls.Parse $url).Host }} rel="noopener noreferrer" target="_blank"{{ end }}>
+                    {{- /* 与桌面端一致：详情页按 URL 首段补当前项 */ -}}
+                    {{- $curSeg := index (split (trim $.RelPermalink "/") "/") 0 -}}
+                    {{- $menuSeg := index (split (trim $url "/") "/") 0 -}}
+                    {{- $isActive := and (ne $menuSeg "") (eq $curSeg $menuSeg) -}}
+                    <a class="menu-item{{ if $isActive }} active{{ end }}" href="{{ $url }}" title="{{ .Title }}"{{ if (urls.Parse $url).Host }} rel="noopener noreferrer" target="_blank"{{ end }}>
                         {{- .Pre | safeHTML }}{{ .Name }}{{ .Post | safeHTML -}}
                     </a>
                 {{- end -}}

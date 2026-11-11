@@ -1004,3 +1004,209 @@ body[theme="dark"] {
   }
 }
 
+// ==============================
+// 顶部导航重设计（2026-11-11）
+// ==============================
+// 主题给 header 铺了 #f8f8f8 / #252627 实色，和 body 的纯白 / #292a2d 之间
+// 形成一条明显灰带。改成与页面同色的半透明毛玻璃：首屏看上去没有背景；
+// 因为 header 是 position:fixed，滚动时靠 backdrop-filter 挡住从下方穿过的正文。
+// 不改 $header-background-color：它还被 .fixed-button（回到顶部按钮）复用，
+// 那里保留浅灰圆底反而更清楚；受它影响的搜索框与移动端菜单在下面单独覆盖。
+$nav-soft: rgba(0, 0, 0, .56);
+$nav-strong: #161209;
+$nav-line: rgba(0, 0, 0, .07);
+$nav-hover-bg: rgba(0, 0, 0, .045);
+$nav-soft-dark: rgba(255, 255, 255, .62);
+$nav-strong-dark: #f2f2f4;
+$nav-line-dark: rgba(255, 255, 255, .09);
+$nav-hover-bg-dark: rgba(255, 255, 255, .07);
+
+header {
+  background-color: rgba(255, 255, 255, .72);
+  border-bottom: 1px solid $nav-line;
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(180%);
+  transition: background-color .3s ease, border-color .3s ease, box-shadow .3s ease;
+
+  // 主题 hover 时铺一层 1.5rem 的大阴影，和极简风格冲突
+  &:hover {
+    box-shadow: none;
+  }
+
+  [theme=dark] & {
+    background-color: rgba(41, 42, 45, .72);
+    border-bottom-color: $nav-line-dark;
+  }
+}
+
+// 没有毛玻璃的浏览器回退成不透明的页面底色，否则正文会透过导航
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  header {
+    background-color: #fff;
+  }
+
+  [theme=dark] header {
+    background-color: #292a2d;
+  }
+}
+
+// 站点名：比主题的 1.5rem 收一点，加字距，避免和右侧菜单抢视觉重量
+#header-desktop .header-wrapper .header-title,
+#header-mobile .header-container .header-wrapper .header-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  margin-right: 0;
+
+  a {
+    transition: opacity .2s ease;
+
+    &:hover {
+      opacity: .6;
+    }
+  }
+}
+
+// 右侧菜单：字号收一档、字重降低、拉开间距，颜色用中间灰而非主题的纯黑
+#header-desktop .header-wrapper .menu {
+  .menu-item {
+    margin: 0 .25rem;
+    font-size: .9rem;
+    font-weight: 500;
+  }
+
+  // 只给「导航链接」加下划线动效；搜索框和主题开关是 span/a，不参与
+  a.menu-item:not(.theme-switch):not(.language) {
+    position: relative;
+    display: inline-block;
+    padding: 0 .5rem;
+    color: $nav-soft;
+    transition: color .2s ease;
+
+    &::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: .9rem;
+      width: 0;
+      height: 2px;
+      border-radius: 2px;
+      background-color: currentColor;
+      opacity: 0;
+      transform: translateX(-50%);
+      transition: width .25s ease, opacity .25s ease;
+    }
+
+    &:hover {
+      color: $nav-strong;
+
+      &::after {
+        width: 1.1rem;
+        opacity: .5;
+      }
+    }
+
+    // 主题靠 font-weight:900 表示当前页，粗细跳变太重，改成细下划线
+    &.active {
+      font-weight: 600;
+      color: $nav-strong;
+
+      &::after {
+        width: 1.1rem;
+        opacity: 1;
+      }
+    }
+  }
+
+  .menu-item.delimiter {
+    display: inline-block;
+    height: 1rem;
+    margin: 0 .65rem;
+    border-left: 1px solid $nav-line;
+    line-height: 1;
+    vertical-align: middle;
+  }
+
+  .menu-item.theme-switch {
+    padding: 0 .5rem;
+    color: $nav-soft;
+    transition: color .2s ease;
+
+    &:hover {
+      color: $nav-strong;
+    }
+  }
+
+  [theme=dark] & {
+    a.menu-item:not(.theme-switch):not(.language) {
+      color: $nav-soft-dark;
+
+      &:hover, &.active {
+        color: $nav-strong-dark;
+      }
+    }
+
+    .menu-item.delimiter {
+      border-left-color: $nav-line-dark;
+    }
+
+    .menu-item.theme-switch {
+      color: $nav-soft-dark;
+
+      &:hover {
+        color: $nav-strong-dark;
+      }
+    }
+  }
+}
+
+// 搜索框：收起时主题会留一块 #f8f8f8 灰方块，展开时改成胶囊
+.search input {
+  background-color: transparent;
+  border-radius: 999px;
+}
+
+[theme=dark] .search input {
+  background-color: transparent;
+}
+
+#header-desktop.open .header-wrapper .menu .search input {
+  background-color: $nav-hover-bg;
+}
+
+[theme=dark] #header-desktop.open .header-wrapper .menu .search input {
+  background-color: $nav-hover-bg-dark;
+}
+
+// 移动端下拉菜单：与顶栏同一套底色和细线，不要再露出深一块的灰
+#header-mobile .header-container .menu {
+  background: rgba(255, 255, 255, .94);
+  border-top: 1px solid $nav-line;
+  box-shadow: 0 .5rem 1.5rem rgba(0, 0, 0, .05);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+
+  .menu-item {
+    color: $nav-soft;
+    font-size: .9375rem;
+
+    &.active {
+      color: $nav-strong;
+      font-weight: 600;
+    }
+  }
+
+  [theme=dark] & {
+    background: rgba(41, 42, 45, .94);
+    border-top-color: $nav-line-dark;
+
+    .menu-item {
+      color: $nav-soft-dark;
+
+      &.active {
+        color: $nav-strong-dark;
+      }
+    }
+  }
+}
+

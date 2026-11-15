@@ -200,10 +200,10 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
 
     h2 {
       margin: 0 0 .45rem;
-      font-size: .8rem;
-      font-weight: 600;
-      letter-spacing: .12em;
-      color: $nav-soft;
+      font-size: .875rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: $nav-strong;
     }
 
     p { margin: 0; }
@@ -234,10 +234,10 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
 
     h2 {
       margin: 0 0 1rem;
-      font-size: .8rem;
-      font-weight: 600;
-      letter-spacing: .12em;
-      color: $nav-soft;
+      font-size: .875rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: $nav-strong;
     }
 
     .gear-groups {
@@ -253,8 +253,8 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
 
     h3 {
       margin: 0 0 .35rem;
-      font-size: .875rem;
-      font-weight: 600;
+      font-size: .9rem;
+      font-weight: 700;
       color: $nav-strong;
     }
 
@@ -274,6 +274,7 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
       dt {
         flex: none;
         width: 4.5rem;
+        font-weight: 600;
         color: $nav-soft;
       }
 
@@ -285,11 +286,14 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
   }
 
   [theme=dark] & {
-    .about-elsewhere h2,
     .about-elsewhere .elsewhere-sep,
-    .about-gear h2,
     .gear-row dt {
       color: $nav-soft-dark;
+    }
+
+    .about-elsewhere h2,
+    .about-gear h2 {
+      color: $nav-strong-dark;
     }
 
     .about-elsewhere,
@@ -339,10 +343,10 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
 
     > h2 {
       margin: 0 0 .85rem;
-      font-size: .8rem;
-      font-weight: 600;
-      letter-spacing: .12em;
-      color: $nav-soft;
+      font-size: .9rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+      color: $nav-strong;
     }
   }
 
@@ -410,7 +414,7 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
     .about-section {
       border-top-color: $nav-line-dark;
 
-      > h2 { color: $nav-soft-dark; }
+      > h2 { color: $nav-strong-dark; }
     }
 
     .recent-list {
@@ -1098,9 +1102,80 @@ body[theme="dark"] {
   }
 }
 
+// ==============================
+// 首页资料卡：小头像居左，右侧依次是名字与一句话简介（沿用关于页并入前
+// about-head 的观感）。主题 partial 输出的是四个平级节点
+// （avatar / title / subtitle / links），用 grid-template-areas 重排即可，
+// 不复制 social 渲染逻辑 —— 写作台改社交账号这里仍会自动跟着变。
+// 选择器带 .home-about，特异性高于上面的 .page.home .home-profile（居中 + padding:0）。
+// ==============================
+.page.home.home-about .home-profile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "avatar title"
+    "avatar subtitle"
+    "links links";
+  align-items: center;
+  column-gap: 1.25rem;
+  row-gap: 0;
+  text-align: left;
+
+  .home-avatar {
+    grid-area: avatar;
+    align-self: center;
+    padding: 0;
+    margin: 0;
+
+    img {
+      display: block;
+      width: 4.25rem;
+      height: 4.25rem;
+      margin: 0;
+      border-radius: 50%;
+      box-shadow: 0 0 0 .3618em rgba(0, 0, 0, .05);
+    }
+  }
+
+  .home-title {
+    grid-area: title;
+    align-self: end;
+    margin: 0;
+    padding: 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: .04em;
+    color: $nav-strong;
+  }
+
+  .home-subtitle {
+    grid-area: subtitle;
+    align-self: start;
+    margin: .35rem 0 0;
+    padding: 0;
+    font-size: .9rem;
+    font-weight: 400;
+    line-height: 1.6;
+    color: $global-font-secondary-color;
+  }
+
+  // 社交图标另起一行，左沿对齐头像，不把右侧文字列挤宽
+  .links {
+    grid-area: links;
+    justify-self: start;
+    justify-content: flex-start;
+    width: auto;
+    margin: 1.1rem 0 0;
+    padding: 0;
+    border-top: none;
+  }
+}
+
 [theme=dark] {
-  .page.home .home-profile .home-subtitle {
-    color: $global-font-secondary-color-dark;
+  .page.home.home-about .home-profile {
+    .home-title { color: $nav-strong-dark; }
+    .home-subtitle { color: $nav-soft-dark; }
   }
 }
 

@@ -3,6 +3,15 @@
 {{- end -}}
 
 {{- define "content" -}}
+{{- /* 分类只有一个「随笔」，清单与 /posts/ 完全重复：不再生成内容，跳到文章列表。
+       标签 term 页仍走下面原有的按年份归档。 */ -}}
+{{- if eq .Type "categories" -}}
+    <meta http-equiv="refresh" content="0; url={{ "/posts/" | relURL }}">
+    <div class="page archive category-redirect">
+        <p>分类已合并到文章列表，正在前往… <a href="{{ "/posts/" | relURL }}">直接打开</a></p>
+    </div>
+    <script>location.replace('{{ "/posts/" | relURL }}');</script>
+{{- else -}}
 <div class="page archive">
     <h2 class="single-title animate__animated animate__pulse animate__faster">
         {{- .Title -}}
@@ -29,4 +38,5 @@
         {{- partial "paginator.html" . -}}
     {{- end -}}
 </div>
+{{- end -}}
 {{- end -}}

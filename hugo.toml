@@ -49,7 +49,7 @@ summaryLength = 30
   # B8：站点作者（publisher / author 结构化数据用）。seo.html 取 .Site.Params.author.name，
   # 原先没设，导致 JSON-LD 里 publisher.name 是一串空字符串。
   # 2026-11-15 文案统一后这里保留本名：schema.org 的 Person 用真实姓名更准确，
-  # 对外展示名统一为站点名「特严赤傲」（导航 / 页脚 / 站点描述 / 关于页）。
+  # 对外展示名统一为站点名「特严赤傲」（导航 / 页脚 / 站点描述 / 首页）。
   author = { name = "田超" }
 
   # 站内搜索：主题的 lunr 方案，索引为构建产物 /index.json
@@ -264,18 +264,10 @@ summaryLength = 30
     identifier = "posts"
     name = "文章"
     url = "/posts/"
+  # 2026-11-15：关于页内容并入首页；分类只有一个「随笔」，和 /posts/ 重复。
+  # 两项菜单一并移除。/about/ 与 /categories/ 仍保留为自动跳转页，旧链接不 404。
   [[menu.main]]
     weight = 3
-    identifier = "categories"
-    name = "分类"
-    url = "/categories/"
-  [[menu.main]]
-    weight = 4
     identifier = "tags"
     name = "标签"
     url = "/tags/"
-  [[menu.main]]
-    weight = 5
-    identifier = "about"
-    name = "关于"
-    url = "/about/"

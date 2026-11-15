@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>关于页 · 写作台</title>
+<title>首页介绍 · 写作台</title>
 <link rel="stylesheet" href="/ui/ui.css">
 </head>
 <body>
@@ -29,7 +29,7 @@
       <a class="nav-link" data-page="publish" href="/publish">写文章</a>
       <a class="nav-link" data-page="manage" href="/manage">文章管理</a>
       <a class="nav-link" data-page="comments" href="/comments">评论管理</a>
-      <a class="nav-link" data-page="about" href="/edit/about">关于页</a>
+      <a class="nav-link" data-page="about" href="/edit/about">首页介绍</a>
       <a class="nav-link" href="/" target="_blank">预览站点 ↗</a>
     </nav>
     <div class="topbar-right">
@@ -42,7 +42,7 @@
 <main class="workspace">
   <section class="pane editor">
     <div class="pane-head">
-      <input class="title-input" id="title" type="text" placeholder="关于页标题…" autocomplete="off" spellcheck="false">
+      <input class="title-input" id="title" type="text" placeholder="首页标题（SEO，一般不用改）…" autocomplete="off" spellcheck="false">
       <div class="hint" id="desc" style="margin-top:6px;"></div>
     </div>
 
@@ -64,7 +64,7 @@
     <input type="file" id="imgFile" accept="image/jpeg,image/png,image/webp,image/gif" hidden>
 
     <div class="editor-body">
-      <textarea id="content" placeholder="关于页正文，支持 Markdown…
+      <textarea id="content" placeholder="首页介绍正文，支持 Markdown…
 
 段落之间空一行。
 - 列表项
@@ -88,7 +88,7 @@
     <div class="pane-head" style="flex-direction:row;align-items:center;gap:8px;padding:11px 16px;">
       <span class="card-title">预览</span>
       <span class="chip chip-accent">实时</span>
-      <span class="hint" style="margin-left:auto;">近似 /about/ 线上效果</span>
+      <span class="hint" style="margin-left:auto;">近似首页「关于我」区块</span>
     </div>
     <div class="preview-scroll">
       <div id="result"></div>
@@ -131,7 +131,7 @@
       `<div class="about-preview-head">` +
       `<img src="${esc(server.avatar)}" alt="${esc(title || server.title)}">` +
       // 标题取输入框的实时值：编辑时预览不跟着变，改完才发现没生效最坑
-      `<h1 class="article-title">${esc(title || server.title || '关于')}</h1>` +
+      `<h1 class="article-title">${esc(title || server.title || '首页介绍')}</h1>` +
       `</div>` +
       `<div class="article-body">${renderMarkdown(body) || '<p class="preview-empty">（正文为空）</p>'}</div>`;
   }
@@ -147,7 +147,7 @@
 
   function markState() {
     if (!isDirty()) {
-      stateEl.textContent = '已从 content/about.md 读取';
+      stateEl.textContent = '已从 content/_index.md 读取';
       revertBtn.hidden = true;
       return;
     }
@@ -271,11 +271,11 @@
       ? `<details><summary class="hint" style="cursor:pointer;margin-top:8px;">部署日志（${deploy.ms || 0} ms）</summary><pre>${esc(deploy.output)}</pre></details>`
       : '';
     if (ok) {
-      const url = payload.permalink || 'https://tianchoy.github.io/about/';
+      const url = payload.permalink || 'https://tianchoy.github.io/#about';
       resultEl.innerHTML =
         `<div class="result ok">
           <div class="result-head">✅ 已保存</div>
-          <div class="result-line">文件：${esc((payload.about && payload.about.file) || 'content/about.md')}</div>
+          <div class="result-line">文件：${esc((payload.about && payload.about.file) || 'content/_index.md')}</div>
           <div class="result-line">线上：<a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a></div>
           <div class="result-line">${deploy.skipped ? '（仅写入本地文件，未推送）' : 'GitHub Actions 已触发，通常 30～60 秒后生效'}</div>
           ${log}
@@ -355,7 +355,7 @@
       contentEl.scrollTop = 0;
     } catch (e) {
       stateEl.textContent = '读取失败';
-      previewEl.innerHTML = `<div class="preview-empty">读取 content/about.md 失败：${esc(e.message)}</div>`;
+      previewEl.innerHTML = `<div class="preview-empty">读取 content/_index.md 失败：${esc(e.message)}</div>`;
       toast('读取失败：' + e.message, 'err', 4200);
     }
   })().finally(() => window.WB.ready());

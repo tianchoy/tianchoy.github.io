@@ -1,27 +1,23 @@
-{{- define "title" }}{{ .Title }} - {{ .Site.Title }}{{ end -}}
+{{- /* 2026-11-15：原 /about/ 的内容并入首页，独立「关于」页下线。
+       内容源是 content/_index.md（正文 + gear 清单），/about/ 由 static/about/index.html
+       做自动跳转，旧链接不会 404。首页仍复用主题的 home/profile.html 资料卡。 */ -}}
+{{- define "title" }}{{ .Site.Title }}{{ end -}}
 
 {{- define "content" -}}
     {{- $params := .Scratch.Get "params" -}}
-    {{- $profile := .Site.Params.home.profile | default dict -}}
-    <div class="page single special about-page">
-        {{- /* 自我介绍区：头像缩小到与标题同行，名字 + 一句话简介，
-               下面接窄栏纯文字段落。参考 antfu.me 的单栏 prose 结构，
-               不再用首页那套大头像资料卡。 */ -}}
-        <header class="about-head">
-            {{- with $profile.avatarURL -}}
-            <div class="about-avatar"><img src="{{ . }}" alt="{{ $.Site.Title }} 的头像"></div>
-            {{- end -}}
-            <div class="about-head-text">
-                <h1>{{ .Site.Title }}</h1>
-                {{- with $profile.subtitle -}}<p class="about-tagline">{{ . }}</p>{{- end -}}
+    <div class="page home home-about about-page">
+        {{- /* 首屏资料卡：头像 + 名字 + 副标题 + 社交图标 */ -}}
+        {{- partial "home/profile.html" . -}}
+
+        {{- /* 关于我：正文来自 content/_index.md，写作台可直接编辑 */ -}}
+        <section class="about-section about-me" id="about" aria-labelledby="about-me-heading">
+            <h2 id="about-me-heading">关于我</h2>
+            <div class="about-content">
+                {{- dict "Content" .Content "Ruby" $params.ruby "Fraction" $params.fraction "Fontawesome" $params.fontawesome | partial "function/content.html" | safeHTML -}}
             </div>
-        </header>
+        </section>
 
-        <div class="about-content">
-            {{- dict "Content" .Content "Ruby" $params.ruby "Fraction" $params.fraction "Fontawesome" $params.fontawesome | partial "function/content.html" | safeHTML -}}
-        </div>
-
-        {{- /* 「在别处」：社交链接直接取站点配置 + social.yml 的 Url/Prefix/Template，
+        {{- /* 在别处：社交链接直接取站点配置 + social.yml 的 Url/Prefix/Template，
                不另抄一份地址，写作台改账号后这里会跟着变。 */ -}}
         {{- $catalog := resources.Get "data/social.yml" | transform.Unmarshal -}}
         {{- $rename := dict "email" "邮箱" "rss" "订阅" -}}
@@ -54,7 +50,7 @@
         {{- end -}}
 
         {{- with $links -}}
-        <section class="about-elsewhere" aria-labelledby="elsewhere-heading">
+        <section class="about-section about-elsewhere" aria-labelledby="elsewhere-heading">
             <h2 id="elsewhere-heading">在别处</h2>
             <p>
                 {{- range $i, $e := sort . "weight" -}}
@@ -65,11 +61,9 @@
         </section>
         {{- end -}}
 
-        {{- /* 装备区：硬件 / 软件两组，Key: value 式清单（对齐 antfu.me/use）。
-               清单写在 content/about.md 的 gear 字段：写作台的关于页编辑器只重写
-               title 与正文，其余 frontmatter 原样保留，后台保存不会吃掉。 */ -}}
+        {{- /* 装备：硬件 / 软件两组 Key: value 清单（对齐 antfu.me/use） */ -}}
         {{- with .Params.gear -}}
-        <section class="about-gear" aria-labelledby="gear-heading">
+        <section class="about-section about-gear" aria-labelledby="gear-heading">
             <h2 id="gear-heading">装备</h2>
             <div class="gear-groups">
                 <div class="gear-group">
@@ -89,6 +83,22 @@
                     </dl>
                 </div>
             </div>
+        </section>
+        {{- end -}}
+
+        {{- /* 最近写了：首页不留白到底，给新访客一条内容路径 */ -}}
+        {{- with first 3 (where $.Site.RegularPages "Type" "posts") -}}
+        <section class="about-section home-recent" aria-labelledby="recent-heading">
+            <h2 id="recent-heading">最近写了</h2>
+            <ul class="recent-list">
+                {{- range . -}}
+                <li>
+                    <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+                    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "1月2日" }}</time>
+                </li>
+                {{- end -}}
+            </ul>
+            <p class="recent-all"><a href="{{ "/posts/" | relURL }}">所有文章 →</a></p>
         </section>
         {{- end -}}
     </div>

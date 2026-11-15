@@ -85,8 +85,6 @@
 
             <div class="tag-foot">
                 <a href="{{ "/posts/" | relURL }}">全部文章</a>
-                <span>·</span>
-                <a href="{{ "/categories/" | relURL }}">按分类浏览</a>
             </div>
         </div>
 
@@ -133,44 +131,14 @@
         })();
         </script>
 
-    {{- /* 分类页：保持主题原有卡片布局 */ -}}
+    {{- /* 分类页：39 篇全在「随笔」一个分类，与 /posts/ 高度重复。
+           2026-11-15 起不再生成内容，直接跳到文章列表；保留 URL 只为了让
+           文章页的历史分类链接和搜索引擎旧收录不落到 404。 */ -}}
     {{- else -}}
-    <div class="page archive">
-        <h2 class="single-title animate__animated animate__pulse animate__faster">
-            {{- .Params.Title | default (T $taxonomies) | default $taxonomies | dict "Some" | T "allSome" -}}
-        </h2>
-
-        {{- if eq $taxonomies "categories" -}}
-            <div class="categories-card">
-                {{- range $terms -}}
-                    {{- $term := .Term -}}
-                    {{- $pages := .Pages -}}
-                    {{- with $.Site.GetPage "taxonomy" (printf "%v/%v" $type $term) -}}
-                    <div class="card-item">
-                        <div class="card-item-wrapper">
-                            <h3 class="card-item-title">
-                                <a href="{{ .RelPermalink }}">
-                                    <i class="far fa-folder fa-fw" aria-hidden="true"></i>&nbsp;{{ .Page.Title }}
-                                </a>
-                            </h3>
-                            {{- range first 5 $pages -}}
-                                <article class="archive-item">
-                                    <a href="{{ .RelPermalink }}" class="archive-item-link">
-                                        {{- .Title -}}
-                                    </a>
-                                </article>
-                            {{- end -}}
-                            {{- if gt (len $pages) 5 -}}
-                                <span class="more-post">
-                                    <a href="{{ .RelPermalink }}" class="more-single-link">{{ T "more" }} >></a>
-                                </span>
-                            {{- end -}}
-                        </div>
-                    </div>
-                    {{- end -}}
-                {{- end -}}
-            </div>
-        {{- end -}}
+    <meta http-equiv="refresh" content="0; url={{ "/posts/" | relURL }}">
+    <div class="page archive category-redirect">
+        <p>分类已合并到文章列表，正在前往… <a href="{{ "/posts/" | relURL }}">直接打开</a></p>
     </div>
+    <script>location.replace('{{ "/posts/" | relURL }}');</script>
     {{- end -}}
 {{- end -}}

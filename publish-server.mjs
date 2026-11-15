@@ -3,7 +3,7 @@
 // 页面：
 //   /publish     发布文章
 //   /manage      文章管理
-//   /edit/about  编辑「关于」页正文
+//   /edit/about  编辑首页介绍正文（content/_index.md）
 //   /admin       站点设置（头像 / 名称 / 副标题 / 社交链接）
 //   /            预览构建后的站点（public/index.html）
 //
@@ -81,7 +81,7 @@ const MIME = {
 const PAGES = {
   "/publish": "publish.html",
   "/manage": "manage.html",
-  // 不能直接用 /about：会和构建产物预览里的 /about/index.html 抢路由
+  // 不能直接用 /about：会和构建产物预览里的 /about/ 跳转页抢路由
   "/edit/about": "about.html",
   "/admin": "admin.html",
   "/comments": "comments.html",
@@ -551,7 +551,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === "/api/about" && req.method === "POST") {
       const payload = await readJSON(req);
       if (!String(payload.body || "").trim()) {
-        return sendJSON(res, 400, { ok: false, error: "关于页正文不能全是空白" });
+        return sendJSON(res, 400, { ok: false, error: "首页介绍正文不能全是空白" });
       }
       const about = await saveAboutPage(payload);
       const deploy = await deployOrSkip(!shouldDeploy(payload));
@@ -559,7 +559,7 @@ const server = http.createServer(async (req, res) => {
         ok: true,
         about,
         // 前端要拿它做「线上地址」链接，必须是绝对地址，别在页面里写死域名
-        permalink: `${siteBaseURL()}/about/`,
+        permalink: `${siteBaseURL()}/#about`,
         deployed: deploy.ok,
         error: deploy.ok ? undefined : `部署失败（退出码 ${deploy.code}）`,
         deploy,

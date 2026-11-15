@@ -36,3 +36,9 @@
 
 {{/* RSS 由主题 head/link.html 统一输出 /index.xml（rel=alternate + rel=feed）。
    这里不再另加 /posts/index.xml，否则阅读器会发现两个内容不同却同名的订阅源。 */}}
+
+{{/* 分类页已退化成跳到 /posts/ 的跳转页（只有一个「随笔」，内容与文章列表重复），
+   别让搜索引擎收录，避免和 /posts/ 抢排名；/about/ 是 static 跳转页，自带 noindex。 */}}
+{{- if hasPrefix .RelPermalink "/categories/" -}}
+<meta name="robots" content="noindex,follow">
+{{- end -}}

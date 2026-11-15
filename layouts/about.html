@@ -2,40 +2,93 @@
 
 {{- define "content" -}}
     {{- $params := .Scratch.Get "params" -}}
+    {{- $profile := .Site.Params.home.profile | default dict -}}
     <div class="page single special about-page">
-        {{- /* 个人资料卡作为头图：头像 + 名称 + 简介 + 社交链接 */ -}}
-        {{- partial "home/profile.html" . -}}
+        {{- /* 自我介绍区：头像缩小到与标题同行，名字 + 一句话简介，
+               下面接窄栏纯文字段落。参考 antfu.me 的单栏 prose 结构，
+               不再用首页那套大头像资料卡。 */ -}}
+        <header class="about-head">
+            {{- with $profile.avatarURL -}}
+            <div class="about-avatar"><img src="{{ . }}" alt="{{ $.Site.Title }} 的头像"></div>
+            {{- end -}}
+            <div class="about-head-text">
+                <h1>{{ .Site.Title }}</h1>
+                {{- with $profile.subtitle -}}<p class="about-tagline">{{ . }}</p>{{- end -}}
+            </div>
+        </header>
 
-        {{- /* 正文 */ -}}
         <div class="about-content">
             {{- dict "Content" .Content "Ruby" $params.ruby "Fraction" $params.fraction "Fontawesome" $params.fontawesome | partial "function/content.html" | safeHTML -}}
         </div>
 
-        {{- /* 装备区：清单写在 content/about.md 的 gear 字段。
-               写作台的关于页编辑器只重写 title / 正文，frontmatter 其余字段原样保留，
-               所以设备清单不会被后台保存吃掉。图标用内联 SVG，不引入字体或第三方 CDN。 */ -}}
+        {{- /* 「在别处」：社交链接直接取站点配置 + social.yml 的 Url/Prefix/Template，
+               不另抄一份地址，写作台改账号后这里会跟着变。 */ -}}
+        {{- $catalog := resources.Get "data/social.yml" | transform.Unmarshal -}}
+        {{- $rename := dict "email" "邮箱" "rss" "订阅" -}}
+        {{- $links := slice -}}
+        {{- range $key, $value := .Site.Params.social -}}
+            {{- if not $value }}{{ continue }}{{ end -}}
+            {{- $s := $key | lower | index $catalog | default dict -}}
+            {{- $id := "" -}}
+            {{- if reflect.IsMap $value -}}
+                {{- $id = $value.id | default "" -}}
+                {{- with $value.url }}{{ $s = dict "Url" . | merge $s }}{{ end -}}
+                {{- with $value.prefix }}{{ $s = dict "Prefix" . | merge $s }}{{ end -}}
+                {{- with $value.template }}{{ $s = dict "Template" . | merge $s }}{{ end -}}
+            {{- else if ne $value true -}}
+                {{- $id = $value -}}
+            {{- end -}}
+            {{- $url := "" -}}
+            {{- with $s.Url -}}
+                {{- $url = . | relLangURL -}}
+            {{- else -}}
+                {{- $tpl := $s.Template | default "%v" -}}
+                {{- with $s.Prefix }}{{ $tpl = . | strings.TrimSuffix "/" | printf "%v/%%v" }}{{ end -}}
+                {{- $url = printf (string $tpl) (string $id) -}}
+            {{- end -}}
+            {{- if $url -}}
+                {{- $label := index $rename ($key | lower) | default ($s.Title | default $key) -}}
+                {{- $external := and (not (hasPrefix $url "mailto:")) (ne (urls.Parse $url).Host "") -}}
+                {{- $links = $links | append (dict "url" $url "label" $label "weight" ($s.Weight | default 999) "external" $external) -}}
+            {{- end -}}
+        {{- end -}}
+
+        {{- with $links -}}
+        <section class="about-elsewhere" aria-labelledby="elsewhere-heading">
+            <h2 id="elsewhere-heading">在别处</h2>
+            <p>
+                {{- range $i, $e := sort . "weight" -}}
+                    {{- if $i }}<span class="elsewhere-sep" aria-hidden="true">·</span>{{ end -}}
+                    <a href="{{ $e.url }}"{{ if $e.external }} target="_blank" rel="noopener noreferrer"{{ end }}>{{ $e.label }}</a>
+                {{- end -}}
+            </p>
+        </section>
+        {{- end -}}
+
+        {{- /* 装备区：硬件 / 软件两组，Key: value 式清单（对齐 antfu.me/use）。
+               清单写在 content/about.md 的 gear 字段：写作台的关于页编辑器只重写
+               title 与正文，其余 frontmatter 原样保留，后台保存不会吃掉。 */ -}}
         {{- with .Params.gear -}}
         <section class="about-gear" aria-labelledby="gear-heading">
             <h2 id="gear-heading">装备</h2>
-            <ul>
-                {{- range . -}}
-                <li>
-                    <svg class="gear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
-                        {{- if eq .icon "laptop" -}}
-                        <rect x="4" y="4.5" width="16" height="10.5" rx="1.5"></rect>
-                        <path d="M2 18.5h20"></path>
-                        {{- else if eq .icon "phone" -}}
-                        <rect x="7" y="2.5" width="10" height="19" rx="2"></rect>
-                        <path d="M11 18.4h2"></path>
-                        {{- else if eq .icon "watch" -}}
-                        <rect x="8" y="7" width="8" height="10" rx="2"></rect>
-                        <path d="M9.5 7V3.5h5V7M9.5 17v3.5h5V17"></path>
+            <div class="gear-groups">
+                <div class="gear-group">
+                    <h3>硬件</h3>
+                    <dl>
+                        {{- range .hardware -}}
+                        <div class="gear-row"><dt>{{ .label }}</dt><dd>{{ .name }}</dd></div>
                         {{- end -}}
-                    </svg>
-                    <span>{{- .name -}}</span>
-                </li>
-                {{- end -}}
-            </ul>
+                    </dl>
+                </div>
+                <div class="gear-group">
+                    <h3>软件</h3>
+                    <dl>
+                        {{- range .software -}}
+                        <div class="gear-row"><dt>{{ .label }}</dt><dd>{{ .name }}</dd></div>
+                        {{- end -}}
+                    </dl>
+                </div>
+            </div>
         </section>
         {{- end -}}
     </div>

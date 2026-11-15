@@ -3,6 +3,17 @@
 // 自定义样式
 // ==============================
 
+// 中性色阶：导航 / 404 / 关于页共用。
+// 必须放在文件最前面——SCSS 变量要先定义再使用，关于页在文件上部就要用到它们。
+$nav-soft: rgba(0, 0, 0, .56);
+$nav-strong: #161209;
+$nav-line: rgba(0, 0, 0, .07);
+$nav-hover-bg: rgba(0, 0, 0, .045);
+$nav-soft-dark: rgba(255, 255, 255, .62);
+$nav-strong-dark: #f2f2f4;
+$nav-line-dark: rgba(255, 255, 255, .09);
+$nav-hover-bg-dark: rgba(255, 255, 255, .07);
+
 // 文章列表项：整行即链接（<a class="archive-item">），padding 内任意位置都可点击
 // 行内 hover 背景 + 轻微右移，节奏更松弛
 .archive-item {
@@ -156,57 +167,187 @@
   }
 }
 
-// 关于页面：以个人资料卡为头图，正文精致排版
+// ==============================
+// 关于页：参考 antfu.me 的窄单栏 prose —— 大标题 + 纯文字段落 + 细分隔线 +
+// Key: value 式清单。不用卡片、胶囊、图标或品牌色，层级全靠字号与留白。
+// 模板见 layouts/about.html（不再复用首页的 home/profile.html 资料卡）。
+// ==============================
 .about-page {
-  // 头图：顶部留白
-  .home-profile {
-    margin-top: 2rem;
-    margin-bottom: 0;
-    text-align: left;
+  max-width: 42rem;
+  width: 100%;
 
-    // 关于页不需要头像下方的社交图标行，直接隐藏（首页仍保留）
-    .links {
-      display: none;
+  .about-head {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+    margin: 1.25rem 0 1.5rem;
+    // 顶栏的毛玻璃规则命中所有 <header>，这里显式还原，
+    // 否则暗色下名字背后会浮出一块半透明矩形。
+    background: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: none;
+
+    .about-avatar {
+      flex: none;
+
+      img {
+        width: 3.75rem;
+        height: 3.75rem;
+        margin: 0;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+      }
     }
-  }
 
-  // 圆形头像（主题的 home-avatar 样式只在 .home 下生效，这里需单独指定）
-  .home-avatar {
-    padding: 0;
-    margin-bottom: .6rem;
-
-    img {
-      width: 7rem;
-      height: 7rem;
-      border-radius: 50%;
-      object-fit: cover;
-      display: inline-block;
+    h1 {
       margin: 0;
-      box-shadow: 0 0 0 .3618em rgba(0, 0, 0, .05);
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1.2;
+      letter-spacing: .04em;
+      color: $nav-strong;
     }
-  }
 
-  // 去掉头图中的大号名称与「乙火」简介，仅保留头像 + 社交链接
-  .home-title,
-  .home-subtitle {
-    display: none;
+    .about-tagline {
+      margin: .4rem 0 0;
+      font-size: .875rem;
+      color: $nav-soft;
+    }
   }
 
   .about-content {
     text-align: left;
-    margin-top: 1.6rem;
-    font-size: 1rem;
-    line-height: 1.9;
+    font-size: .95rem;
+    line-height: 1.72;
 
-    p {
-      margin: 1rem 0;
-    }
+    p { margin: .7rem 0; }
 
     ul, ol {
       margin: 1rem 0;
 
-      li {
-        margin: .5rem 0;
+      li { margin: .4rem 0; }
+    }
+  }
+
+  .about-elsewhere {
+    margin-top: 1.5rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid $nav-line;
+    font-size: .875rem;
+
+    h2 {
+      margin: 0 0 .45rem;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      color: $nav-soft;
+    }
+
+    p { margin: 0; }
+
+    a {
+      color: $single-link-color;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(45, 150, 189, .35);
+      transition: color .2s ease, border-color .2s ease;
+
+      &:hover {
+        color: $single-link-hover-color;
+        border-bottom-color: currentColor;
+      }
+    }
+
+    .elsewhere-sep {
+      margin: 0 .5rem;
+      color: $nav-soft;
+      opacity: .55;
+    }
+  }
+
+  .about-gear {
+    margin-top: 1.5rem;
+    padding-top: 1.1rem;
+    border-top: 1px solid $nav-line;
+
+    h2 {
+      margin: 0 0 1rem;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      color: $nav-soft;
+    }
+
+    .gear-groups {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0 2.5rem;
+
+      @media (max-width: 680px) {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+    }
+
+    h3 {
+      margin: 0 0 .35rem;
+      font-size: .875rem;
+      font-weight: 600;
+      color: $nav-strong;
+    }
+
+    dl { margin: 0; }
+
+    .gear-row {
+      display: flex;
+      align-items: baseline;
+      gap: .75rem;
+      padding: .3rem 0;
+      border-bottom: 1px solid $nav-line;
+      font-size: .875rem;
+      line-height: 1.6;
+
+      &:last-child { border-bottom: 0; }
+
+      dt {
+        flex: none;
+        width: 4.5rem;
+        color: $nav-soft;
+      }
+
+      dd {
+        margin: 0;
+        color: $nav-strong;
+      }
+    }
+  }
+
+  [theme=dark] & {
+    .about-tagline,
+    .about-elsewhere h2,
+    .about-elsewhere .elsewhere-sep,
+    .about-gear h2,
+    .gear-row dt {
+      color: $nav-soft-dark;
+    }
+
+    .about-elsewhere,
+    .about-gear { border-top-color: $nav-line-dark; }
+
+    .gear-row { border-bottom-color: $nav-line-dark; }
+
+    h1,
+    h3,
+    .gear-row dd { color: $nav-strong-dark; }
+
+    .about-elsewhere a {
+      color: $single-link-color-dark;
+      border-bottom-color: rgba(85, 189, 226, .4);
+
+      &:hover {
+        color: $single-link-hover-color-dark;
+        border-bottom-color: currentColor;
       }
     }
   }
@@ -1016,14 +1157,7 @@ body[theme="dark"] {
 // 正文分开，再画一条灰线反而把「悬浮感」拉回成一条贴死的横条。
 // 不改 $header-background-color：它还被 .fixed-button（回到顶部按钮）复用，
 // 那里保留浅灰圆底反而更清楚；受它影响的搜索框与移动端菜单在下面单独覆盖。
-$nav-soft: rgba(0, 0, 0, .56);
-$nav-strong: #161209;
-$nav-line: rgba(0, 0, 0, .07);
-$nav-hover-bg: rgba(0, 0, 0, .045);
-$nav-soft-dark: rgba(255, 255, 255, .62);
-$nav-strong-dark: #f2f2f4;
-$nav-line-dark: rgba(255, 255, 255, .09);
-$nav-hover-bg-dark: rgba(255, 255, 255, .07);
+// $nav-* 中性色阶变量已统一挪到文件开头（关于页也要用，必须早于首次使用）。
 
 header {
   // 底色只留四成：透明部分交给 backdrop-filter 去「磨」，玻璃感来自模糊而不是白漆
@@ -1350,76 +1484,5 @@ header {
   }
 }
 
-// ==============================
-// 关于页「装备」区（2026-11-15）
-// 正文是全英文随笔，装备区用中文小标题收尾；样式沿用 404 那套细线胶囊，
-// 不引入卡片阴影或品牌色，避免把极简的关于页变成「配置清单」。
-// ==============================
-.about-gear {
-  margin-top: 2.75rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid $nav-line;
-  text-align: left;
-
-  h2 {
-    margin: 0 0 1rem;
-    font-size: .8rem;
-    font-weight: 600;
-    letter-spacing: .12em;
-    color: $nav-soft;
-  }
-
-  ul {
-    display: flex;
-    flex-wrap: wrap;
-    gap: .6rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  li {
-    display: inline-flex;
-    align-items: center;
-    gap: .45rem;
-    padding: .4rem .85rem;
-    border: 1px solid rgba(0, 0, 0, .12);
-    border-radius: 999px;
-    font-size: .875rem;
-    line-height: 1.6;
-    color: $nav-soft;
-    transition: color .2s ease, border-color .2s ease, background-color .2s ease;
-
-    &:hover {
-      color: $nav-strong;
-      border-color: $nav-soft;
-      background-color: $nav-hover-bg;
-    }
-  }
-
-  .gear-icon {
-    width: 1rem;
-    height: 1rem;
-    flex: none;
-    opacity: .8;
-  }
-
-  [theme=dark] & {
-    border-top-color: $nav-line-dark;
-
-    h2,
-    li {
-      color: $nav-soft-dark;
-    }
-
-    li {
-      border-color: rgba(255, 255, 255, .14);
-
-      &:hover {
-        color: $nav-strong-dark;
-        border-color: $nav-soft-dark;
-        background-color: $nav-hover-bg-dark;
-      }
-    }
-  }
-}
+// 关于页装备区样式已并入上方的 .about-page（antfu.me 风格窄栏清单），
+// 原先那套细线胶囊 + SVG 图标方案已弃用，这里不再保留重复定义。

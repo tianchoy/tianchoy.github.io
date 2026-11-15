@@ -1,6 +1,6 @@
 ---
 title: "关于"
-description: "关于特严赤傲（乙火）——写代码、记录生活的人。"
+description: "关于特严赤傲——写代码，也记录生活的人。"
 date: 2022-01-01
 layout: "about"
 ---

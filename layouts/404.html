@@ -1,0 +1,36 @@
+{{- define "title" -}}
+    {{- T "pageNotFound" | printf "404 %v" }} - {{ .Site.Title -}}
+{{- end -}}
+
+{{- define "content" -}}
+    <div class="page" id="content-404">
+        <h1 id="error-emoji"></h1>
+        <p class="error-text">抱歉，这个页面不存在，或者已经搬走了。</p>
+
+        {{- /* 主题默认只有一个 history.back() 图标；外部直达 404 时会退回外站，
+               这里换成三个明确的站内入口 */ -}}
+        <nav class="error-links" aria-label="页面不存在时的导航">
+            <a href="{{ .Site.Home.RelPermalink }}">回首页</a>
+            <a href="{{ "/posts/" | relURL }}">所有文章</a>
+            <a href="{{ "/tags/" | relURL }}">所有标签</a>
+        </nav>
+
+        <div class="error-recent">
+            <h2>最近写了</h2>
+            <ul>
+                {{- range first 3 (where .Site.RegularPages "Section" "posts") -}}
+                <li>
+                    <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+                    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006-01-02" }}</time>
+                </li>
+                {{- end -}}
+            </ul>
+        </div>
+    </div>
+    <script type="text/javascript">
+        (function() {
+            var emojiArray = ['\\(o_o)/', '(˚Δ˚)b', '(^-^*)', '(≥o≤)', '(^_^)b', '(·_·)','(=\'X\'=)', '(>_<)', '(;-;)'];
+            document.getElementById('error-emoji').appendChild(document.createTextNode(emojiArray[Math.floor(Math.random() * emojiArray.length)]));
+        })();
+    </script>
+{{- end -}}

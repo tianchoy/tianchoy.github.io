@@ -34,5 +34,5 @@
   {{- end -}}
 {{- end -}}
 
-{{/* RSS 订阅入口：让搜索引擎与阅读器能直接发现订阅源（主题默认没在 head 输出该 link） */}}
-<link rel="alternate" type="application/rss+xml" title="{{ .Site.Title }} · 文章订阅" href="{{ .Site.BaseURL }}posts/index.xml">
+{{/* RSS 由主题 head/link.html 统一输出 /index.xml（rel=alternate + rel=feed）。
+   这里不再另加 /posts/index.xml，否则阅读器会发现两个内容不同却同名的订阅源。 */}}

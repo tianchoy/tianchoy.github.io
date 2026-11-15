@@ -1230,3 +1230,122 @@ header {
     }
   }
 }
+
+// ==============================
+// 404 页（2026-11-15）：主题默认只有 emoji + 一句话 + history.back()，
+// 外部直达时会把人送回外站。补三个站内入口和最近 3 篇，沿用导航那套细线胶囊。
+// ==============================
+#content-404 {
+  // 主题用 transform: translateY(30vh) 把 404 内容往下推，但 transform 不参与布局，
+  // 原本只有一行文字时看不出来；加了「最近写了」之后内容会溢出 main、盖到页脚上。
+  // 改用 padding-top 占位：高度参与 flex 计算，短屏时页面自然滚动、页脚始终在内容之后。
+  transform: none;
+  padding-top: clamp(4.5rem, 15vh, 9rem);
+
+  .error-text {
+    margin-top: .25rem;
+    color: $nav-soft;
+  }
+
+  .error-links {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: .65rem;
+    margin: 1.5rem 0 0;
+
+    a {
+      padding: .35rem .9rem;
+      border: 1px solid rgba(0, 0, 0, .12);
+      border-radius: 999px;
+      font-size: .875rem;
+      color: $nav-soft;
+      transition: color .2s ease, border-color .2s ease, background-color .2s ease;
+
+      &:hover {
+        color: $nav-strong;
+        border-color: $nav-soft;
+        background-color: $nav-hover-bg;
+      }
+    }
+  }
+
+  .error-recent {
+    width: min(28rem, 90%);
+    // 主题 404 内容区紧贴页脚，列表最后一行会和版权统计叠在一起
+    margin: 2.75rem auto 0;
+    padding-bottom: 2.5rem;
+    text-align: left;
+
+    h2 {
+      margin: 0 0 .5rem;
+      font-size: .8rem;
+      font-weight: 600;
+      letter-spacing: .08em;
+      color: $nav-soft;
+    }
+
+    ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      padding: .45rem 0;
+      border-bottom: 1px solid $nav-line;
+      font-size: .9rem;
+
+      a {
+        color: $nav-soft;
+        transition: color .2s ease;
+
+        &:hover {
+          color: $nav-strong;
+        }
+      }
+
+      time {
+        flex: none;
+        font-size: .8rem;
+        color: $nav-soft;
+        opacity: .7;
+      }
+    }
+  }
+
+  [theme=dark] & {
+    .error-text,
+    .error-recent h2,
+    .error-recent time {
+      color: $nav-soft-dark;
+    }
+
+    .error-links a {
+      color: $nav-soft-dark;
+      border-color: rgba(255, 255, 255, .14);
+
+      &:hover {
+        color: $nav-strong-dark;
+        border-color: $nav-soft-dark;
+        background-color: $nav-hover-bg-dark;
+      }
+    }
+
+    .error-recent li {
+      border-bottom-color: $nav-line-dark;
+
+      a {
+        color: $nav-soft-dark;
+
+        &:hover {
+          color: $nav-strong-dark;
+        }
+      }
+    }
+  }
+}

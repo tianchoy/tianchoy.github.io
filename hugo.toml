@@ -38,13 +38,18 @@ summaryLength = 30
   fingerprint = "sha256"
   dateFormat = "2006-01-02"
   title = "特严赤傲"
-  description = "小田的博客,这是一些关于生活随笔、心情日记、一些思想感悟的记录。"
+  description = "特严赤傲 · 写代码，也记录生活。散文、随笔与日常的私人笔记。"
+  # 社交分享卡片：Hugo 内置 opengraph/twitter_cards 读的是 .Site.Params.images（复数），
+  # 只配 [params.seo].image 只能进 JSON-LD，og:image / twitter:image 会一直为空。
+  images = ["/images/og-cover.png"]
   # 站点级关键词：首页/列表页用。文章页自动改用该文的 tags。
   # 2026-10-30 调整：按用户指定，聚焦「散文/随笔/个人博客/个人网站」定位。
   keywords = ["散文", "随笔", "日记", "博客", "个人博客", "个人网站"]
 
   # B8：站点作者（publisher / author 结构化数据用）。seo.html 取 .Site.Params.author.name，
   # 原先没设，导致 JSON-LD 里 publisher.name 是一串空字符串。
+  # 2026-11-15 文案统一后这里保留本名：schema.org 的 Person 用真实姓名更准确，
+  # 对外展示名统一为站点名「特严赤傲」（导航 / 页脚 / 站点描述 / 关于页）。
   author = { name = "田超" }
 
   # 站内搜索：主题的 lunr 方案，索引为构建产物 /index.json
@@ -118,12 +123,12 @@ summaryLength = 30
 
   [params.section]
     paginate = 20
-    dateFormat = "Jan 02"
+    dateFormat = "1月2日"
     rss = 10
 
   [params.list]
     paginate = 20
-    dateFormat = "Jan 02"
+    dateFormat = "1月2日"
     rss = 10
 
   [params.app]
@@ -222,7 +227,8 @@ summaryLength = 30
     Matrix = ""
     Bilibili = ""
     Email = "tianchoy@live.com"
-    RSS = ""
+    # social.yml 的 rss 项自带 Url: /index.xml，值给 true 就只显示图标、不再拼账号
+    RSS = true
 
   [params.page]
     [params.page.toc]

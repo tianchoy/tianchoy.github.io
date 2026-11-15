@@ -18,7 +18,7 @@ gear:
     - label: "耳机"
       name: "AirPods 4"
   software:
-    - label: "写作"
+    - label: "代码编辑器"
       name: "Wu editor"
     - label: "iOS"
       name: "Xcode"
@@ -26,6 +26,12 @@ gear:
       name: "Android Studio"
     - label: "鸿蒙"
       name: "DevEco Studio"
+    - label: "代码托管"
+      name: "GitHub"
+    - label: "AI 助手"
+      name: "WorkBuddy"
+    - label: "音乐"
+      name: "波点音乐"
 ---
 
 我这个人吧，尽量把日子过得简单点。平时靠写代码吃饭，喜欢拿手机拍拍日常——那些小瞬间、普普通通的画面，都是我不想忘掉的东西。

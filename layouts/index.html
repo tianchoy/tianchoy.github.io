@@ -1,6 +1,8 @@
 {{- /* 2026-11-15：原 /about/ 的内容并入首页，独立「关于」页下线。
        内容源是 content/_index.md（正文 + gear 清单），/about/ 由 static/about/index.html
-       做自动跳转，旧链接不会 404。首页仍复用主题的 home/profile.html 资料卡。 */ -}}
+       做自动跳转，旧链接不会 404。首页仍复用主题的 home/profile.html 资料卡。
+       社交链接只在「在别处」出现（params.home.profile.social = false，资料卡不再铺图标行）；
+       首页不列文章清单，内容入口交给导航「文章」。 */ -}}
 {{- define "title" }}{{ .Site.Title }}{{ end -}}
 
 {{- define "content" -}}
@@ -44,8 +46,12 @@
             {{- end -}}
             {{- if $url -}}
                 {{- $label := index $rename ($key | lower) | default ($s.Title | default $key) -}}
+                {{- /* 图标从资料卡那行搬过来：用 social.yml 的 Font Awesome 类，
+                       与文字同色、无圆底，保持 antfu 式纯文字链接的克制 */ -}}
+                {{- $icon := "" -}}
+                {{- with $s.Icon }}{{ with .Class }}{{ $icon = . }}{{ end }}{{ end -}}
                 {{- $external := and (not (hasPrefix $url "mailto:")) (ne (urls.Parse $url).Host "") -}}
-                {{- $links = $links | append (dict "url" $url "label" $label "weight" ($s.Weight | default 999) "external" $external) -}}
+                {{- $links = $links | append (dict "url" $url "label" $label "icon" $icon "weight" ($s.Weight | default 999) "external" $external) -}}
             {{- end -}}
         {{- end -}}
 
@@ -55,7 +61,7 @@
             <p>
                 {{- range $i, $e := sort . "weight" -}}
                     {{- if $i }}<span class="elsewhere-sep" aria-hidden="true">·</span>{{ end -}}
-                    <a href="{{ $e.url }}"{{ if $e.external }} target="_blank" rel="noopener noreferrer"{{ end }}>{{ $e.label }}</a>
+                    <a href="{{ $e.url }}"{{ if $e.external }} target="_blank" rel="noopener noreferrer"{{ end }}>{{- with $e.icon }}<i class="{{ . }}" aria-hidden="true"></i>{{ end -}}{{ $e.label }}</a>
                 {{- end -}}
             </p>
         </section>
@@ -86,20 +92,5 @@
         </section>
         {{- end -}}
 
-        {{- /* 最近写了：首页不留白到底，给新访客一条内容路径 */ -}}
-        {{- with first 3 (where $.Site.RegularPages "Type" "posts") -}}
-        <section class="about-section home-recent" aria-labelledby="recent-heading">
-            <h2 id="recent-heading">最近写了</h2>
-            <ul class="recent-list">
-                {{- range . -}}
-                <li>
-                    <a href="{{ .RelPermalink }}">{{ .Title }}</a>
-                    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "1月2日" }}</time>
-                </li>
-                {{- end -}}
-            </ul>
-            <p class="recent-all"><a href="{{ "/posts/" | relURL }}">所有文章 →</a></p>
-        </section>
-        {{- end -}}
     </div>
 {{- end -}}

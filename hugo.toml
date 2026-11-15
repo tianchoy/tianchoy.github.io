@@ -161,7 +161,9 @@ summaryLength = 30
       title = "特严赤傲"
       subtitle = "热爱祖国、前端程序员、爱好摄影以及生活记录者。"
       typeit = false
-      social = true
+      # 2026-11-15：首页资料卡不再单独铺一行社交图标，四个链接统一收进首页「在别处」
+      # 分区（那里读的是下面的 [params.social]）。写作台不管理这个开关，保存站点设置时不会被改回 true。
+      social = false
     [params.home.posts]
       enable = false
       paginate = 6

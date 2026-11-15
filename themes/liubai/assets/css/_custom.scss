@@ -206,30 +206,66 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
       color: $nav-strong;
     }
 
-    p { margin: 0; }
-
-    a {
-      color: $single-link-color;
-      text-decoration: none;
-      border-bottom: 1px solid rgba(45, 150, 189, .35);
-      transition: color .2s ease, border-color .2s ease;
-
-      // 社交图标从资料卡搬到这里：继承链接色、不加圆底，避免变成第二排按钮
-      i {
-        margin-right: .3em;
-        font-size: .88em;
-      }
-
-      &:hover {
-        color: $single-link-hover-color;
-        border-bottom-color: currentColor;
-      }
+    // 「在别处」只放图标：等大的圆角小方块排成一行，中性色起步，
+    // hover / 键盘聚焦才亮起站点强调色，保持窄栏 prose 的克制。
+    .elsewhere-icons {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .55rem;
     }
 
-    .elsewhere-sep {
-      margin: 0 .5rem;
+    .elsewhere-icon {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.15rem;
+      height: 2.15rem;
+      border: 1px solid $nav-line;
+      border-radius: .6rem;
       color: $nav-soft;
-      opacity: .55;
+      text-decoration: none;
+      transition: color .2s ease, border-color .2s ease, background-color .2s ease, transform .2s ease;
+
+      i {
+        font-size: 1rem;
+        line-height: 1;
+      }
+
+      &:hover,
+      &:focus-visible {
+        color: $single-link-color;
+        border-color: rgba(45, 150, 189, .45);
+        background-color: rgba(45, 150, 189, .07);
+        transform: translateY(-2px);
+        outline: none;
+      }
+
+      // 纯图标靠小标签说明去向；名称由模板写进 data-label，不必再铺一遍文字
+      &::after {
+        content: attr(data-label);
+        position: absolute;
+        bottom: calc(100% + .45rem);
+        left: 50%;
+        transform: translate(-50%, .25rem);
+        padding: .15rem .5rem;
+        border-radius: .35rem;
+        background: $nav-strong;
+        color: #fff;
+        font-size: .72rem;
+        line-height: 1.5;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .2s ease, transform .2s ease;
+      }
+
+      &:hover::after,
+      &:focus-visible::after {
+        opacity: .94;
+        transform: translate(-50%, 0);
+      }
     }
   }
 
@@ -292,7 +328,6 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
   }
 
   [theme=dark] & {
-    .about-elsewhere .elsewhere-sep,
     .gear-row dt {
       color: $nav-soft-dark;
     }
@@ -311,13 +346,20 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
     h3,
     .gear-row dd { color: $nav-strong-dark; }
 
-    .about-elsewhere a {
-      color: $single-link-color-dark;
-      border-bottom-color: rgba(85, 189, 226, .4);
+    .about-elsewhere .elsewhere-icon {
+      color: $nav-soft-dark;
+      border-color: $nav-line-dark;
 
-      &:hover {
-        color: $single-link-hover-color-dark;
-        border-bottom-color: currentColor;
+      &:hover,
+      &:focus-visible {
+        color: $single-link-color-dark;
+        border-color: rgba(85, 189, 226, .45);
+        background-color: rgba(85, 189, 226, .1);
+      }
+
+      &::after {
+        background: #eeeef0;
+        color: #292a2d;
       }
     }
   }
@@ -333,11 +375,13 @@ $nav-hover-bg-dark: rgba(255, 255, 255, .07);
   // 下面一接正文就会与后续区块、页脚重叠，改成真实的上内边距。
   // 选择器必须比站点后面那条 .page.home .home-profile{padding:0} 更具体，
   // 否则 padding 被压成 0，头像会顶到 56px 高的 fixed 导航栏底下。
-  // 4rem 下限保证头像上沿始终在导航栏下方，留得住一点呼吸空间。
+  // 2026-11-15：留白从 4rem 加到 5.5rem 起步。内容超高时页面是从 main 顶部
+  // 开始排的，这段 padding 就是头像与 3.5rem 高 fixed 导航条之间唯一的缓冲，
+  // 太窄会出现「头像贴着导航、往上滑一下就被糊掉」的观感。
   .home-profile {
     -webkit-transform: none;
     transform: none;
-    padding-top: clamp(4rem, 8vh, 5.5rem);
+    padding-top: clamp(5.5rem, 11vh, 8rem);
     margin-bottom: 2rem;
   }
 
@@ -973,16 +1017,24 @@ body[theme="dark"] {
 
 // 仅在首页：让 main 在其高度（= 100vh - footer）内垂直居中 hero
 // 注：主题 .wrapper 在首页会带 home 类（baseof 里按 .IsHome 加的），
-// 这里用普通类选择器，兼容主题所用的 libsass 编译器（不支持 :has()）。
+// 这里用普通类选择器，兼容主题所用的 Sass 编译器（不支持 :has()）。
+// 2026-11-15：改成「安全居中」。原来用 align-items:center，一旦首页内容比
+// main 高（现在有关于我 / 在别处 / 装备三段，矮窗口和手机上必然超出），
+// .container 会向上溢出 main，头像顶部落在视口之外：滚到顶也露不出来，
+// 一直压在 fixed 毛玻璃导航条后面。交叉轴改回 flex-start，居中交给
+// .container 的 auto margin —— 空间够时上下平分，空间不够时 auto margin
+// 自动归零，内容从顶部正常排布，可一路往下滚。
 .wrapper.home {
   main {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     min-height: 0;
   }
 
   .container {
     width: 100%;
+    margin-top: auto;
+    margin-bottom: auto;
   }
 
   // 由 flex 居中接管，不再需要页头占位

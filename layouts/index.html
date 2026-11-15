@@ -46,8 +46,7 @@
             {{- end -}}
             {{- if $url -}}
                 {{- $label := index $rename ($key | lower) | default ($s.Title | default $key) -}}
-                {{- /* 图标从资料卡那行搬过来：用 social.yml 的 Font Awesome 类，
-                       与文字同色、无圆底，保持 antfu 式纯文字链接的克制 */ -}}
+                {{- /* 图标取 social.yml 的 Font Awesome 类，「在别处」只渲染图标、不铺文字 */ -}}
                 {{- $icon := "" -}}
                 {{- with $s.Icon }}{{ with .Class }}{{ $icon = . }}{{ end }}{{ end -}}
                 {{- $external := and (not (hasPrefix $url "mailto:")) (ne (urls.Parse $url).Host "") -}}
@@ -58,12 +57,17 @@
         {{- with $links -}}
         <section class="about-section about-elsewhere" aria-labelledby="elsewhere-heading">
             <h2 id="elsewhere-heading">在别处</h2>
-            <p>
-                {{- range $i, $e := sort . "weight" -}}
-                    {{- if $i }}<span class="elsewhere-sep" aria-hidden="true">·</span>{{ end -}}
-                    <a href="{{ $e.url }}"{{ if $e.external }} target="_blank" rel="noopener noreferrer"{{ end }}>{{- with $e.icon }}<i class="{{ . }}" aria-hidden="true"></i>{{ end -}}{{ $e.label }}</a>
+            {{- /* 只留图标：平台名放进 aria-label 供读屏使用，另写进 data-label，
+                   hover / 键盘聚焦时由 CSS 浮出小标签，纯图标也不会让人猜不出是哪儿。
+                   不再输出原生 title，避免与 CSS 气泡重复提示。
+                   没有图标定义的平台退回通用链接图标。 */ -}}
+            <div class="elsewhere-icons">
+                {{- range sort . "weight" -}}
+                <a class="elsewhere-icon" href="{{ .url }}" data-label="{{ .label }}" aria-label="{{ .label }}"{{ if .external }} target="_blank" rel="noopener noreferrer"{{ end }}>
+                    {{- with .icon -}}<i class="{{ . }}" aria-hidden="true"></i>{{- else -}}<i class="fas fa-link fa-fw" aria-hidden="true"></i>{{- end -}}
+                </a>
                 {{- end -}}
-            </p>
+            </div>
         </section>
         {{- end -}}
 

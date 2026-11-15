@@ -1349,3 +1349,77 @@ header {
     }
   }
 }
+
+// ==============================
+// 关于页「装备」区（2026-11-15）
+// 正文是全英文随笔，装备区用中文小标题收尾；样式沿用 404 那套细线胶囊，
+// 不引入卡片阴影或品牌色，避免把极简的关于页变成「配置清单」。
+// ==============================
+.about-gear {
+  margin-top: 2.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid $nav-line;
+  text-align: left;
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    color: $nav-soft;
+  }
+
+  ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .6rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    display: inline-flex;
+    align-items: center;
+    gap: .45rem;
+    padding: .4rem .85rem;
+    border: 1px solid rgba(0, 0, 0, .12);
+    border-radius: 999px;
+    font-size: .875rem;
+    line-height: 1.6;
+    color: $nav-soft;
+    transition: color .2s ease, border-color .2s ease, background-color .2s ease;
+
+    &:hover {
+      color: $nav-strong;
+      border-color: $nav-soft;
+      background-color: $nav-hover-bg;
+    }
+  }
+
+  .gear-icon {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+    opacity: .8;
+  }
+
+  [theme=dark] & {
+    border-top-color: $nav-line-dark;
+
+    h2,
+    li {
+      color: $nav-soft-dark;
+    }
+
+    li {
+      border-color: rgba(255, 255, 255, .14);
+
+      &:hover {
+        color: $nav-strong-dark;
+        border-color: $nav-soft-dark;
+        background-color: $nav-hover-bg-dark;
+      }
+    }
+  }
+}

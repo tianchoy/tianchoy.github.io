@@ -103,8 +103,12 @@ summaryLength = 30
     [params.analytics.goatcounter]
       # 只填子域名（后台地址是 https://tianchao.goatcounter.com，这里就写 tianchao）
       site = "tianchao"
-      # 页脚显示「本站浏览 / 本页阅读量」，需要后台勾选 Allow adding visitor counts on your website
+      # 页脚显示统计，需要后台勾选 Allow adding visitor counts on your website
       counters = true
+      # 页脚统计措辞：{} 会被替换成数字。原来的「本站浏览 / 本页阅读量」太像后台计数器，
+      # 换成更含蓄的说法；想换文案只改这两行，填 "{}" 则只留纯数字。
+      labeltotal = "已有 {} 次到访"
+      labelpage = "此页 {} 次驻足"
     [params.analytics.umami]
       script = "https://cloud.umami.is/script.js"
       websiteId = ""

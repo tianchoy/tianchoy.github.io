@@ -44,11 +44,18 @@
     {{- end -}}
     {{- $legacyJSON := $legacy | jsonify -}}
 
+    {{- /* 页脚措辞放在 hugo.toml 的 labeltotal / labelpage，{} 位置插入数字节点。
+           这样换文案不用改模板；没配置时回落到同一套含蓄说法。 */ -}}
+    {{- $labelTotal := index $gc "labeltotal" | default "已有 {} 次到访" -}}
+    {{- $labelPage := index $gc "labelpage" | default "此页 {} 次驻足" -}}
+    {{- $totalHTML := replace $labelTotal "{}" `<span id="gc-total">–</span>` | safeHTML -}}
+    {{- $pageHTML := replace $labelPage "{}" `<span id="gc-page">–</span>` | safeHTML -}}
+
     {{- if $counters }}
 <div class="busuanzi-stats gc-stats" id="gc-stats" data-path="{{ $pagePath }}" data-legacy="{{ $legacyJSON }}" hidden>
-  <span>本站浏览 <span id="gc-total">–</span> 次</span>
+  <span>{{ $totalHTML }}</span>
   <span class="busuanzi-sep">·</span>
-  <span>本页阅读量 <span id="gc-page">–</span> 次</span>
+  <span>{{ $pageHTML }}</span>
 </div>
     {{- end }}
 
@@ -186,11 +193,11 @@ gtag("config", '{{ $id }}');
 
 {{- else if eq $p "busuanzi" }}
 <div class="busuanzi-stats">
-  <span id="busuanzi_container_site_pv">本站总访问量 <span id="busuanzi_value_site_pv">-</span> 次</span>
+  <span id="busuanzi_container_site_pv">已有 <span id="busuanzi_value_site_pv">-</span> 次到访</span>
   <span class="busuanzi-sep">·</span>
-  <span id="busuanzi_container_site_uv">访客数 <span id="busuanzi_value_site_uv">-</span> 人</span>
+  <span id="busuanzi_container_site_uv">访客 <span id="busuanzi_value_site_uv">-</span> 位</span>
   <span class="busuanzi-sep">·</span>
-  <span id="busuanzi_container_page_pv">本页阅读量 <span id="busuanzi_value_page_pv">-</span> 次</span>
+  <span id="busuanzi_container_page_pv">此页 <span id="busuanzi_value_page_pv">-</span> 次驻足</span>
 </div>
 <script async src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
 {{- end -}}

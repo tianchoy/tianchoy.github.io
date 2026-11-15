@@ -10,5 +10,33 @@
         <div class="about-content">
             {{- dict "Content" .Content "Ruby" $params.ruby "Fraction" $params.fraction "Fontawesome" $params.fontawesome | partial "function/content.html" | safeHTML -}}
         </div>
+
+        {{- /* 装备区：清单写在 content/about.md 的 gear 字段。
+               写作台的关于页编辑器只重写 title / 正文，frontmatter 其余字段原样保留，
+               所以设备清单不会被后台保存吃掉。图标用内联 SVG，不引入字体或第三方 CDN。 */ -}}
+        {{- with .Params.gear -}}
+        <section class="about-gear" aria-labelledby="gear-heading">
+            <h2 id="gear-heading">装备</h2>
+            <ul>
+                {{- range . -}}
+                <li>
+                    <svg class="gear-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        {{- if eq .icon "laptop" -}}
+                        <rect x="4" y="4.5" width="16" height="10.5" rx="1.5"></rect>
+                        <path d="M2 18.5h20"></path>
+                        {{- else if eq .icon "phone" -}}
+                        <rect x="7" y="2.5" width="10" height="19" rx="2"></rect>
+                        <path d="M11 18.4h2"></path>
+                        {{- else if eq .icon "watch" -}}
+                        <rect x="8" y="7" width="8" height="10" rx="2"></rect>
+                        <path d="M9.5 7V3.5h5V7M9.5 17v3.5h5V17"></path>
+                        {{- end -}}
+                    </svg>
+                    <span>{{- .name -}}</span>
+                </li>
+                {{- end -}}
+            </ul>
+        </section>
+        {{- end -}}
     </div>
 {{- end -}}

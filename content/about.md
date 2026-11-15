@@ -3,6 +3,15 @@ title: "关于"
 description: "关于特严赤傲——写代码，也记录生活的人。"
 date: 2022-01-01
 layout: "about"
+# 装备区：清单由 layouts/about.html 渲染，写作台编辑正文时 frontmatter 原样保留。
+# icon 可选 laptop / phone / watch，对应内联 SVG 线性图标（不依赖字体或 CDN）。
+gear:
+  - name: "MacBook Pro M1"
+    icon: "laptop"
+  - name: "iPhone 15 Pro"
+    icon: "phone"
+  - name: "iWatch SE"
+    icon: "watch"
 ---
 
 I'm Chinese, and I love this country. I try to keep things simple. I write code for a living, but I'd rather be documenting everyday life with my phone — little moments, ordinary scenes, things I don't want to forget.

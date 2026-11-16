@@ -30,11 +30,13 @@ jobs:
           submodules: recursive
           fetch-depth: 0
 
-      - name: Setup Hugo (extended)
+      # v0.170.0 起 Hugo 取消 extended 构建，只剩统一二进制（功能等同旧 extended，
+      # 仅移除 libsass）。本站已迁到 dartsass，无需 extended，也不能再传 extended:true。
+      - name: Setup Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: "0.169.0"
-          extended: true
+          hugo-version: "0.170.0"
+          extended: false
 
       # dartsass 编译需要 PATH 里有原生 `sass` 可执行文件（Hugo 不自带 Dart Sass）。
       # 注意：npm 的 sass 是 Node 包装版，Hugo 的 dartsass 只认原生二进制，
